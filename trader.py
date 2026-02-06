@@ -12,8 +12,11 @@ STOCK_UNIVERSE = [
     '005930.KS', '000660.KS', '373220.KS', '005380.KS', '000270.KS',
     '207940.KS', '068270.KS', '035420.KS', '035720.KS', '105560.KS',
     '055550.KS', '005490.KS', '017670.KS', '030200.KS', '259960.KS',
-    '352820.KS', '051910.KS', '006400.KS', '012330.KS', '010130.KS'
-]
+    '352820.KS', '051910.KS', '006400.KS', '012330.KS', '010130.KS',
+    '033780.KS', '000810.KS', '012450.KS', '066570.KS', '036570.KS',
+    '009150.KS', '032830.KS', '086790.KS', '003550.KS', '011200.KS',
+    '018260.KS', '010950.KS', '000720.KS', '001450.KS', '047050.KS'
+] # Expanded to 35 to allow Top 30
 
 def get_ticker_name(ticker):
     """티커 코드를 종목명으로 변환합니다 (매핑 테이블)"""
@@ -24,7 +27,12 @@ def get_ticker_name(ticker):
         '105560.KS': 'KB금융', '055550.KS': '신한지주', '005490.KS': 'POSCO홀딩스',
         '017670.KS': 'SK텔레콤', '030200.KS': 'KT', '259960.KS': '크래프톤', 
         '352820.KS': '하이브', '051910.KS': 'LG화학', '006400.KS': '삼성SDI', 
-        '012330.KS': '현대모비스', '010130.KS': '고려아연'
+        '012330.KS': '현대모비스', '010130.KS': '고려아연', '033780.KS': 'KT&G',
+        '000810.KS': '삼성화재', '012450.KS': '한화에어로', '066570.KS': 'LG전자',
+        '036570.KS': '엔씨소프트', '009150.KS': '삼성전기', '032830.KS': '삼성생명',
+        '086790.KS': '하나금융지주', '003550.KS': 'LG', '011200.KS': 'HMM',
+        '018260.KS': '삼성에스디에스', '010950.KS': 'S-Oil', '000720.KS': '현대건설',
+        '001450.KS': '현대해상', '047050.KS': '포스코인터'
     }
     return names.get(ticker, ticker)
 
@@ -123,7 +131,7 @@ def main():
         return
 
     df = pd.DataFrame(results)
-    portfolio = df.sort_values(by='Total_Score', ascending=False).head(5)
+    portfolio = df.sort_values(by='Total_Score', ascending=False).head(30)
     cols = ['Stock Name', 'Ticker', 'Price', 'Trend', 'Sentiment', 'Total_Score']
     portfolio = portfolio[cols]
     df = df[cols]
