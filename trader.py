@@ -19,9 +19,13 @@ def get_technical_scores(ticker):
     """Scoring Module - Technical Dimension"""
     try:
         data = yf.download(ticker, period="60d", interval="1d", progress=False)
-        if data.empty: return None
+        if data.empty or len(data) < 20: return None
         
         close = data['Close']
+        # If MultiIndex (happens with some yf versions even for 1 ticker)
+        if isinstance(close, pd.DataFrame):
+            close = close.iloc[:, 0]
+            
         # Moving Averages
         ma20 = close.rolling(window=20).mean().iloc[-1]
         ma5 = close.rolling(window=5).mean().iloc[-1]
@@ -86,11 +90,14 @@ def main():
     # 2. Scoring & Selection
     results = []
     for ticker in STOCK_UNIVERSE:
-        print(f"Scoring {ticker}...", end='\r')
+        print(f"Scoring {ticker}...")
         tech = get_technical_scores(ticker)
-        if not tech: continue
+        if not tech: 
+            print(f"Failed to get technical scores for {ticker}")
+            continue
         
         sent = get_sentiment_score(ticker)
+        print(f"Sentiment for {ticker}: {sent}")
         
         # Final Score Calculation
         final_score = (tech['trend_score'] * weights['trend']) + (sent * weights['sentiment'])
@@ -103,6 +110,10 @@ def main():
             'Total_Score': final_score
         })
         time.sleep(0.1)
+
+    if not results:
+        print("No scoring results found. Check data sources.")
+        return
 
     df = pd.DataFrame(results)
     # Selection: Top 5 Stocks
