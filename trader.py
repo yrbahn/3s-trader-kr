@@ -173,30 +173,42 @@ def main():
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy 수립 완료: {current_strategy[:100]}...")
 
-    # 2. Scoring Universe (S)
-    # pykrx의 get_market_ticker_list가 환경에 따라 오류(IndexError)를 발생시키는 경우가 있습니다.
-    # 이를 방지하기 위해 날짜를 명시하지 않고 가장 최신의 리스트를 가져오거나, 
-    # 실패 시 수동 리스트로 즉시 전환하도록 안전 장치를 강화했습니다.
-    kosdaq_top_30 = [
-        '247540', '086520', '028300', '291230', '068760', 
-        '403870', '058470', '214150', '145020', '066970',
-        '121600', '213420', '293490', '035760', '036540'
+import FinanceDataReader as fdr
+
+def get_stock_universe() -> List[str]:
+    """FinanceDataReader를 사용하여 코스닥 상위 종목 Universe를 구성합니다."""
+    # 1. 수동 관리 우량주 리스트 (모든 API 실패 시 최종 보루)
+    fallback_tickers = [
+        '247540', '086520', '191170', '028300', '291230', 
+        '068760', '403870', '058470', '272410', '214150',
+        '145020', '066970', '121600', '213420', '293490'
     ]
     
-    universe_tickers = []
     try:
-        # 1차 시도: 날짜 없이 최신 리스트 요청
-        kq_tickers = stock.get_market_ticker_list(market="KOSDAQ")
-        if kq_tickers:
-            universe_tickers = [f"{t}.KQ" for t in kq_tickers[:15]]
-    except:
-        print("pykrx API 오류 감지. 준비된 로컬 리스트로 분석을 진행합니다.")
+        print("FinanceDataReader로 종목 리스트 수집 중...")
+        # fdr.StockListing은 코스피, 코스닥 종목 전체를 가져옵니다.
+        df_kq = fdr.StockListing('KOSDAQ')
+        
+        if df_kq.empty:
+            return [f"{t}.KQ" for t in fallback_tickers]
 
-    # 2차 시도: API 실패 시 하드코딩된 리스트 사용
-    if not universe_tickers:
-        universe_tickers = [f"{t}.KQ" for t in kosdaq_top_30[:15]]
+        # 시가총액 데이터가 있다면 시총 상위순 정렬 (fdr 버전에 따라 컬럼명이 다를 수 있음)
+        cap_col = next((c for c in ['Marcap', '시가총액', 'Amount'] if c in df_kq.columns), None)
+        if cap_col:
+            df_kq = df_kq.sort_values(by=cap_col, ascending=False)
+        
+        # 종목코드 컬럼 찾기
+        code_col = next((c for c in ['Code', 'Symbol', '종목코드'] if c in df_kq.columns), 'Code')
+        top_tickers = df_kq[code_col].head(15).tolist()
+        
+        return [f"{t}.KQ" for t in top_tickers]
+        
+    except Exception as e:
+        print(f"FinanceDataReader 호출 중 오류 발생 (로컬 리스트로 대체): {e}")
+        return [f"{t}.KQ" for t in fallback_tickers]
     
-    scored_universe = []
+    # 2. Scoring Universe (S)
+    universe_tickers = get_stock_universe()
     for ticker in universe_tickers:
         print(f"Scoring {ticker}...", end='\r')
         data = _get_stock_data(ticker)
