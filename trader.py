@@ -96,42 +96,105 @@ def get_stock_universe() -> List[str]:
 # --- 1. Scoring Module ---
 
 def _get_stock_data(ticker: str) -> Dict[str, Any]:
-    """Scoring을 위한 원천 데이터 수집 (Technical + News)"""
+    """Scoring을 위한 고도화된 데이터 수집 (Technical + Fundamental + News + Investor)"""
+    code = ticker.split(".")[0]
+    market_date = get_latest_trading_day()
+    
+    # 1. Technical Data (yfinance)
     try:
-        data = yf.download(ticker, period="6mo", interval="1d", progress=False)
-        if data.empty: return {}
-        current_price = data['Close'].iloc[-1]
-        weekly_return = (data['Close'].iloc[-1] / data['Close'].iloc[-6] - 1) * 100
-        volatility = data['Close'].pct_change().tail(20).std() * 100
+        df = yf.download(ticker, period="6mo", interval="1d", progress=False)
+        if df.empty: return {}
         
-        code = ticker.split(".")[0]
-        url = f"https://finance.naver.com/item/news_news.naver?code={code}"
-        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(res.text, "html.parser")
-        headlines = [a.text.strip() for a in soup.select("table.type5 a")[:5]]
+        # 기본 가격 정보
+        last_close = float(df['Close'].iloc[-1])
+        weekly_return = round(((last_close / df['Close'].iloc[-6]) - 1) * 100, 2)
+        volatility = round(df['Close'].pct_change().tail(20).std() * 100, 2)
         
-        return {
-            "price": int(current_price),
-            "weekly_return": round(weekly_return, 2),
-            "volatility": round(volatility, 2),
-            "headlines": headlines
+        # 이동평균 및 RSI 계산
+        ma5 = df['Close'].rolling(window=5).mean().iloc[-1]
+        ma20 = df['Close'].rolling(window=20).mean().iloc[-1]
+        ma60 = df['Close'].rolling(window=60).mean().iloc[-1]
+        
+        # RSI (14)
+        delta = df['Close'].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / loss
+        rsi = round(100 - (100 / (1 + rs.iloc[-1])), 2)
+        
+        tech_data = {
+            "price": int(last_close),
+            "weekly_return": weekly_return,
+            "volatility": volatility,
+            "ma_status": "정배열" if ma5 > ma20 > ma60 else "역배열/혼조",
+            "rsi": rsi
         }
-    except: return {}
+    except Exception as e:
+        print(f"Technical 수집 오류 ({ticker}): {e}")
+        return {}
+
+    # 2. Fundamental Data (pykrx)
+    try:
+        f_df = stock.get_market_fundamental(market_date, market_date, code)
+        fundamental = {
+            "per": round(float(f_df['PER'].iloc[-1]), 2) if not f_df.empty else 0,
+            "pbr": round(float(f_df['PBR'].iloc[-1]), 2) if not f_df.empty else 0,
+            "div_yield": round(float(f_df['배당수익률'].iloc[-1]), 2) if not f_df.empty else 0
+        }
+    except:
+        fundamental = {"per": 0, "pbr": 0, "div_yield": 0}
+
+    # 3. Investor Trends (pykrx - 최근 5거래일 합계)
+    try:
+        start_date = (datetime.strptime(market_date, "%Y%m%d") - timedelta(days=7)).strftime("%Y%m%d")
+        investor_df = stock.get_market_net_purchases_of_equities_by_ticker(start_date, market_date, "KOSDAQ")
+        target_inv = investor_df.loc[code] if code in investor_df.index else None
+        investor = {
+            "foreign": int(target_inv['외국인']) if target_inv is not None else 0,
+            "institution": int(target_inv['기관']) if target_inv is not None else 0
+        }
+    except:
+        investor = {"foreign": 0, "institution": 0}
+
+    # 4. News Data (Naver Mobile API)
+    news_headlines = []
+    url = f"https://m.stock.naver.com/api/news/stock/{code}?pageSize=10&page=1"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            for entry in response.json():
+                if 'items' in entry:
+                    for item in entry['items']:
+                        news_headlines.append(item.get('title', '').replace('&quot;', '"'))
+                        if len(news_headlines) >= 5: break
+                if len(news_headlines) >= 5: break
+    except: pass
+
+    return {**tech_data, **fundamental, **investor, "headlines": news_headlines}
 
 def scoring_agent(ticker: str, data: Dict[str, Any]) -> Dict[str, int]:
-    """LLM이 데이터를 보고 6개 차원에 대해 점수 산출 (1-10)"""
+    """LLM이 고도화된 데이터를 보고 6개 차원에 대해 점수 산출 (1-10)"""
     if LLM_DISABLED or not data:
         return {d: 5 for d in SCORING_DIMENSIONS}
-    prompt = f"""Analyze the stock {ticker} based on following data:
-- Weekly Return: {data['weekly_return']}%
-- 20-day Volatility: {data['volatility']}%
-- Recent Headlines: {data['headlines']}
-Assign scores (1-10) for each dimension: {SCORING_DIMENSIONS}
-Return ONLY JSON format: {{"scores": {{"dim_name": score, ...}}, "rationale": "short string"}}"""
+        
+    prompt = f"""Analyze {ticker} with following multidimensional data:
+[Technical] Price: {data['price']}, Weekly Return: {data['weekly_return']}%, Volatility: {data['volatility']}%, MA Status: {data['ma_status']}, RSI: {data['rsi']}
+[Fundamental] PER: {data['per']}, PBR: {data['pbr']}, Div Yield: {data['div_yield']}%
+[Investor] Foreign Net: {data['foreign']}, Institution Net: {data['institution']} (Last 5 days)
+[News] Headlines: {data['headlines']}
+
+Assign scores (1-10) for: {SCORING_DIMENSIONS}
+Focus on Logical Consistency between Fundamental (Health/Growth) and Technical (Momentum/Risk).
+
+Return ONLY JSON format:
+{{"scores": {{"dim_name": score, ...}}, "rationale": "one sentence summary"}}"""
+
     try:
         res = _openai_chat([{"role": "user", "content": prompt}])
         return _extract_json(res).get("scores", {d: 5 for d in SCORING_DIMENSIONS})
-    except: return {d: 5 for d in SCORING_DIMENSIONS}
+    except:
+        return {d: 5 for d in SCORING_DIMENSIONS}
 
 # --- 2. Strategy Module ---
 
