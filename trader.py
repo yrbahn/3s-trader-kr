@@ -105,65 +105,89 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         df = yf.download(ticker, period="6mo", interval="1d", progress=False)
         if df.empty: return {}
         
-        # 기본 가격 정보
-        # pandas Series 비교 에러 방지를 위해 .item() 또는 .iloc[0] 사용
         def get_val(series):
-            if isinstance(series, pd.Series):
-                return series.iloc[0]
-            return series
+            if hasattr(series, 'iloc'):
+                val = series.iloc[-1]
+                if hasattr(val, 'iloc'): val = val.iloc[0]
+                return float(val)
+            return float(series)
 
-        last_close = get_val(df['Close'].iloc[-1])
-        prev_close = get_val(df['Close'].iloc[-6])
+        last_close = get_val(df['Close'])
+        prev_close = get_val(df['Close'].iloc[-6] if len(df) >= 6 else df['Close'].iloc[0])
         
         weekly_return = round(((last_close / prev_close) - 1) * 100, 2)
-        volatility = round(df['Close'].pct_change().tail(20).std() * 100, 2)
+        vol_series = df['Close'].pct_change().tail(20).std()
+        volatility = round(float(vol_series.iloc[0]) * 100, 2) if hasattr(vol_series, 'iloc') else round(float(vol_series) * 100, 2)
         
-        # 이동평균 및 RSI 계산
-        ma5 = get_val(df['Close'].rolling(window=5).mean().iloc[-1])
-        ma20 = get_val(df['Close'].rolling(window=20).mean().iloc[-1])
-        ma60 = get_val(df['Close'].rolling(window=60).mean().iloc[-1])
+        ma5 = get_val(df['Close'].rolling(window=5).mean())
+        ma20 = get_val(df['Close'].rolling(window=20).mean())
+        ma60 = get_val(df['Close'].rolling(window=60).mean())
         
-        # RSI (14)
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
-        last_rs = get_val(rs.iloc[-1])
-        rsi = round(100 - (100 / (1 + last_rs)), 2)
+        last_rs = get_val(rs)
+        rsi = round(100 - (100 / (1 + last_rs)), 2) if last_rs is not None else 50
         
         tech_data = {
             "price": int(last_close),
-            "weekly_return": weekly_return,
-            "volatility": volatility,
+            "weekly_return": float(weekly_return),
+            "volatility": float(volatility),
             "ma_status": "정배열" if ma5 > ma20 > ma60 else "역배열/혼조",
-            "rsi": rsi
+            "rsi": float(rsi)
         }
     except Exception as e:
         print(f"Technical 수집 오류 ({ticker}): {e}")
         return {}
 
-    # 2. Fundamental Data (pykrx)
+    # 2. Fundamental & Investor Data (Naver Scraper - pykrx 대체)
+    fundamental = {"per": 0.0, "pbr": 0.0, "div_yield": 0.0}
+    investor = {"foreign": 0, "institution": 0}
+    
     try:
-        f_df = stock.get_market_fundamental(market_date, market_date, code)
-        fundamental = {
-            "per": round(float(f_df['PER'].iloc[-1]), 2) if not f_df.empty else 0,
-            "pbr": round(float(f_df['PBR'].iloc[-1]), 2) if not f_df.empty else 0,
-            "div_yield": round(float(f_df['배당수익률'].iloc[-1]), 2) if not f_df.empty else 0
-        }
-    except:
-        fundamental = {"per": 0, "pbr": 0, "div_yield": 0}
+        # Fundamental (Naver Main)
+        url_main = f"https://finance.naver.com/item/main.naver?code={code}"
+        res_main = requests.get(url_main, headers={"User-Agent": "Mozilla/5.0"})
+        soup_main = BeautifulSoup(res_main.text, "html.parser")
+        
+        # PER, PBR, 배당수익률 추출 (id 기준)
+        def _parse_naver_val(soup, id_str):
+            try:
+                val = soup.find("em", id=id_str).text.replace(",", "").replace("배", "").replace("%", "")
+                return float(val)
+            except: return 0.0
 
-    # 3. Investor Trends (pykrx - 최근 5거래일 합계)
-    try:
-        start_date = (datetime.strptime(market_date, "%Y%m%d") - timedelta(days=7)).strftime("%Y%m%d")
-        investor_df = stock.get_market_net_purchases_of_equities_by_ticker(start_date, market_date, "KOSDAQ")
-        target_inv = investor_df.loc[code] if code in investor_df.index else None
-        investor = {
-            "foreign": int(target_inv['외국인']) if target_inv is not None else 0,
-            "institution": int(target_inv['기관']) if target_inv is not None else 0
+        fundamental = {
+            "per": _parse_naver_val(soup_main, "_per"),
+            "pbr": _parse_naver_val(soup_main, "_pbr"),
+            "div_yield": _parse_naver_val(soup_main, "_dvr")
         }
-    except:
-        investor = {"foreign": 0, "institution": 0}
+
+        # Investor (Naver Frgn)
+        url_frgn = f"https://finance.naver.com/item/frgn.naver?code={code}"
+        res_frgn = requests.get(url_frgn, headers={"User-Agent": "Mozilla/5.0"})
+        soup_frgn = BeautifulSoup(res_frgn.text, "html.parser")
+        
+        # 최근 5거래일 합계 계산
+        rows = soup_frgn.select("table.type2 tr")
+        f_sum, i_sum = 0, 0
+        count = 0
+        for row in rows:
+            cols = row.find_all("td")
+            if len(cols) >= 9:
+                f_buy = cols[6].text.replace(",", "")
+                i_buy = cols[5].text.replace(",", "")
+                try:
+                    f_sum += int(f_buy)
+                    i_sum += int(i_buy)
+                    count += 1
+                except: continue
+            if count >= 5: break
+            
+        investor = {"foreign": f_sum, "institution": i_sum}
+    except Exception as e:
+        print(f"Naver 데이터 수집 오류 ({ticker}): {e}")
 
     # 4. News Data (Naver Mobile API)
     news_headlines = []
@@ -175,7 +199,8 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
             for entry in response.json():
                 if 'items' in entry:
                     for item in entry['items']:
-                        news_headlines.append(item.get('title', '').replace('&quot;', '"'))
+                        title = item.get('title', '').replace('&quot;', '"').replace('&amp;', '&')
+                        news_headlines.append(title)
                         if len(news_headlines) >= 5: break
                 if len(news_headlines) >= 5: break
     except: pass
