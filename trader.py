@@ -106,23 +106,24 @@ def is_profitable(code: str) -> bool:
         return True
 
 def get_stock_universe() -> List[str]:
-    """FinanceDataReader를 사용하여 코스닥 시총 상위 100개 중 흑자 기업 Universe를 구성합니다."""
+    """FinanceDataReader를 사용하여 코스닥 시총 상위 500개 중 흑자 기업 Universe를 구성합니다."""
     fallback_tickers = ['247540', '086520', '191170', '028300', '291230']
     try:
-        print("코스닥 시총 상위 100개 종목 수집 및 흑자 필터링 중...")
+        print("코스닥 시총 상위 500개 종목 수집 및 흑자 필터링 중... (시간이 다소 소요될 수 있습니다)")
         df_kq = fdr.StockListing('KOSDAQ')
         
         cap_col = next((c for c in ['Marcap', '시가총액'] if c in df_kq.columns), 'Marcap')
-        df_kq = df_kq.sort_values(by=cap_col, ascending=False).head(100)
+        df_kq = df_kq.sort_values(by=cap_col, ascending=False).head(500)
         
         code_col = next((c for c in ['Code', 'Symbol', '종목코드'] if c in df_kq.columns), 'Code')
-        top_100_codes = df_kq[code_col].tolist()
+        top_codes = df_kq[code_col].tolist()
         
         profitable_universe = []
-        for code in top_100_codes:
+        for i, code in enumerate(top_codes):
             if is_profitable(code):
                 profitable_universe.append(f"{code}.KQ")
-                print(f"Added {code} (Profitable)", end="\r")
+                if i % 10 == 0:
+                    print(f"Filtering: {i}/500 processed...", end="\r")
             
         print(f"\n최종 Universe 구성 완료: {len(profitable_universe)} 종목")
         return profitable_universe
@@ -368,7 +369,9 @@ def main():
         })
     
     # 3. Selection
-    final_tickers = selection_agent(current_strategy, scored_universe)
+    # 대규모 Universe(500개) 대응: 점수 상위 30개를 먼저 추린 뒤 최종 Selection 진행
+    scored_universe_sorted = sorted(scored_universe, key=lambda x: sum(x['scores'].values()), reverse=True)
+    final_tickers = selection_agent(current_strategy, scored_universe_sorted[:30])
     print(f"\n최종 Selection 완료: {final_tickers}")
 
     # 4. Save State & Report
