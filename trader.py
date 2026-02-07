@@ -106,21 +106,30 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         if df.empty: return {}
         
         # 기본 가격 정보
-        last_close = float(df['Close'].iloc[-1])
-        weekly_return = round(((last_close / df['Close'].iloc[-6]) - 1) * 100, 2)
+        # pandas Series 비교 에러 방지를 위해 .item() 또는 .iloc[0] 사용
+        def get_val(series):
+            if isinstance(series, pd.Series):
+                return series.iloc[0]
+            return series
+
+        last_close = get_val(df['Close'].iloc[-1])
+        prev_close = get_val(df['Close'].iloc[-6])
+        
+        weekly_return = round(((last_close / prev_close) - 1) * 100, 2)
         volatility = round(df['Close'].pct_change().tail(20).std() * 100, 2)
         
         # 이동평균 및 RSI 계산
-        ma5 = df['Close'].rolling(window=5).mean().iloc[-1]
-        ma20 = df['Close'].rolling(window=20).mean().iloc[-1]
-        ma60 = df['Close'].rolling(window=60).mean().iloc[-1]
+        ma5 = get_val(df['Close'].rolling(window=5).mean().iloc[-1])
+        ma20 = get_val(df['Close'].rolling(window=20).mean().iloc[-1])
+        ma60 = get_val(df['Close'].rolling(window=60).mean().iloc[-1])
         
         # RSI (14)
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
-        rsi = round(100 - (100 / (1 + rs.iloc[-1])), 2)
+        last_rs = get_val(rs.iloc[-1])
+        rsi = round(100 - (100 / (1 + last_rs)), 2)
         
         tech_data = {
             "price": int(last_close),
