@@ -261,6 +261,39 @@ def selection_agent(strategy: str, scored_universe: List[Dict]) -> List[str]:
     except:
         return [s['ticker'] for s in sorted(scored_universe, key=lambda x: sum(x['scores'].values()), reverse=True)[:MAX_PORTFOLIO_STOCKS]]
 
+def get_market_overview() -> str:
+    """시장 전체 상황(코스닥 지수 추세)을 분석하여 텍스트로 리턴합니다."""
+    try:
+        # 코스닥 지수(101) 데이터 가져오기
+        end_date = get_latest_trading_day()
+        start_date = (datetime.strptime(end_date, "%Y%m%d") - timedelta(days=30)).strftime("%Y%m%d")
+        
+        df = stock.get_market_ohlcv(start_date, end_date, "101", market="KOSDAQ")
+        if df.empty: return "Market data unavailable."
+        
+        curr_idx = df['종가'].iloc[-1]
+        prev_idx = df['종가'].iloc[-2]
+        change_pct = round(((curr_idx / prev_idx) - 1) * 100, 2)
+        
+        # 최근 5일 추세
+        recent_5 = df['종가'].tail(5)
+        trend = "상승" if recent_5.iloc[-1] > recent_5.iloc[0] else "하락/조정"
+        
+        # 시장 심리 요약
+        overview = f"KOSDAQ Index: {curr_idx} ({change_pct}%). "
+        overview += f"최근 5거래일 추세는 {trend} 중입니다. "
+        
+        # 뉴스에서 시장 키워드 추출 (간이)
+        url = "https://finance.naver.com/news/mainnews.naver"
+        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        soup = BeautifulSoup(res.text, "html.parser")
+        news_titles = [t.text.strip() for t in soup.select(".mainnews_list .articleSubject a")[:3]]
+        overview += f" 주요 뉴스: {', '.join(news_titles)}"
+        
+        return overview
+    except Exception as e:
+        return f"Market overview error: {e}"
+
 # --- Main Execution ---
 
 def main():
@@ -276,9 +309,9 @@ def main():
         except: pass
 
     # 1. Strategy Generation
-    market_date = get_latest_trading_day()
-    market_overview = "Market base date: " + market_date
+    market_overview = get_market_overview()
     current_strategy = strategy_agent(trajectory, market_overview)
+    print(f"시장 분석 완료: {market_overview[:50]}...")
     print(f"Strategy 수립 완료: {current_strategy[:50]}...")
 
     # 2. Scoring Universe
