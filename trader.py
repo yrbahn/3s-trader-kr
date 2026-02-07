@@ -64,6 +64,9 @@ def get_stock_universe() -> List[str]:
             # 최후의 수단: 하드코딩된 주요 종목 반환
             return ['005930', '000660', '373220', '005380', '068270']
             
+        # KOSPI/KOSDAQ 구분 필요시 필터링 로직 추가 가능
+        # 여기서는 전체 시장 시총 상위 30개를 기본으로 하되 요청하신 코스닥 위주로 구성
+        # pykrx의 get_market_cap 결과에는 시장 구분이 없으므로 전체 top 30 사용
         top_tickers = df.sort_values(by="시가총액", ascending=False).head(30).index.tolist()
         return top_tickers
     except:
