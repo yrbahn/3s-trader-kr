@@ -8,15 +8,15 @@ from trader import _get_stock_data
 import json
 
 def test_data_fetch():
-    # 삼성전자(KOSPI) 또는 에코프로비엠(KOSDAQ) 중 하나로 테스트
     test_ticker = "247540.KQ" # 에코프로비엠
-    print(f"Testing _get_stock_data for {test_ticker}...")
+    print(f"Testing _get_stock_data with News Context for {test_ticker}...")
     
     result = _get_stock_data(test_ticker)
     
-    # 예쁘게 출력
-    print("\n--- [실제 리턴 데이터 구조] ---")
-    print(json.dumps(result, indent=4, ensure_ascii=False))
+    print("\n--- [뉴스 요약 포함 데이터 구조] ---")
+    # news_contexts만 따로 확인
+    for i, ctx in enumerate(result.get('news_contexts', []), 1):
+        print(f"{i}. {ctx[:150]}...")
 
 if __name__ == "__main__":
     test_data_fetch()

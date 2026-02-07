@@ -238,8 +238,8 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"Naver 데이터 수집 오류 ({ticker}): {e}")
 
-    # 4. News Data (Naver Mobile API)
-    news_headlines = []
+    # 4. News Data (Naver Mobile API - Title + Body Snippet)
+    news_contexts = []
     url = f"https://m.stock.naver.com/api/news/stock/{code}?pageSize=10&page=1"
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
@@ -249,15 +249,17 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
                 if 'items' in entry:
                     for item in entry['items']:
                         title = item.get('title', '').replace('&quot;', '"').replace('&amp;', '&')
-                        news_headlines.append(title)
-                        if len(news_headlines) >= 5: break
-                if len(news_headlines) >= 5: break
+                        body = item.get('body', '').replace('&quot;', '"').replace('&amp;', '&')
+                        # 제목 + 본문 요약 결합
+                        news_contexts.append(f"[{title}] {body}")
+                        if len(news_contexts) >= 5: break
+                if len(news_contexts) >= 5: break
     except: pass
 
-    return {**tech_data, **fundamental, **investor, "headlines": news_headlines}
+    return {**tech_data, **fundamental, **investor, "news_contexts": news_contexts}
 
 def scoring_agent(ticker: str, data: Dict[str, Any]) -> Dict[str, int]:
-    """LLM이 고도화된 데이터를 보고 6개 차원에 대해 점수 산출 (1-10)"""
+    """LLM이 고도화된 데이터와 뉴스 요약을 보고 6개 차원에 대해 점수 산출 (1-10)"""
     if LLM_DISABLED or not data:
         return {d: 5 for d in SCORING_DIMENSIONS}
         
@@ -266,11 +268,11 @@ def scoring_agent(ticker: str, data: Dict[str, Any]) -> Dict[str, int]:
 [MA & RSI] Status: {data['ma_status']}, Gap5: {data['ma_gaps']['ma5']}%, Gap20: {data['ma_gaps']['ma20']}%, RSI: {data['rsi']}
 [Fundamental] PER: {data['per']}, PBR: {data['pbr']}, Div Yield: {data['div_yield']}%
 [Investor] Foreign Net: {data['foreign']}, Institution Net: {data['institution']} (Last 5 days)
-[News] Headlines: {data['headlines']}
+[News Summaries]
+{chr(10).join(data['news_contexts'])}
 
 Assign scores (1-10) for: {SCORING_DIMENSIONS}
-Focus on Technical Momentum (Gap/ROC) and Fundamental Value consistency.
-
+Focus on 'News Sentiment' and 'News Impact' based on the body snippets provided.
 Return ONLY JSON format:
 {{"scores": {{"dim_name": score, ...}}, "rationale": "one sentence summary"}}"""
 
