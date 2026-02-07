@@ -1,0 +1,12 @@
+{
+  "trajectory": [
+    {
+      "date": "2026-02-06",
+      "strategy": "Focus on assets with strong financial health and positive growth potential while managing volatility risk.",
+      "universe_avg_return": -0.08004512153606028,
+      "portfolio_return": -0.03972901189098177
+    }
+  ],
+  "current_strategy": "Focus on assets with strong financial health and positive growth potential while managing volatility risk.",
+  "last_run_date": "2026-02-06"
+}
