@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Optional, Tuple
 # --- Configuration ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
-MAX_PORTFOLIO_STOCKS = 30 # User requested Top 30
 
 def _safe_float(x: Any) -> Optional[float]:
     try:
@@ -38,21 +37,18 @@ def get_stock_universe() -> List[str]:
     """코스닥 시가총액 기준 상위 35개 종목 Universe 구성"""
     target_date = get_latest_trading_day()
     try:
-        # Get all tickers' market cap
         df = stock.get_market_cap(target_date)
         if df.empty:
-            for i in range(1, 10): # Look back further for market cap data
+            for i in range(1, 10):
                 prev_date = (datetime.now() - timedelta(days=i)).strftime("%Y%m%d")
                 df = stock.get_market_cap(prev_date)
                 if not df.empty: 
                     target_date = prev_date
                     break
         
-        # Filter for KOSDAQ only
         kq_tickers = stock.get_market_ticker_list(target_date, market="KOSDAQ")
         df_kq = df[df.index.isin(kq_tickers)]
         
-        # If still empty, use a stable list as fallback
         if len(df_kq) < 5:
             return ['247540', '086520', '028300', '291230', '068760', '403870', '058470', '214150', '145020', '066970']
 
@@ -68,9 +64,6 @@ def _technical_analysis(ticker: str, target_date: str) -> Optional[Dict[str, Any
         if len(df) < 20: return None
         
         close = df["종가"]
-        ma5 = close.rolling(window=5).mean().iloc[-1]
-        ma20 = close.rolling(window=20).mean().iloc[-1]
-        
         delta = close.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
@@ -81,8 +74,7 @@ def _technical_analysis(ticker: str, target_date: str) -> Optional[Dict[str, Any
         return {
             "price": int(close.iloc[-1]),
             "rsi14": float(rsi),
-            "weekly_return": float(weekly_return),
-            "up_down": "상승" if close.iloc[-1] > close.iloc[-2] else "하락"
+            "weekly_return": float(weekly_return)
         }
     except: return None
 
@@ -115,7 +107,6 @@ def main():
         fund = stock.get_market_fundamental(target_date, target_date, ticker)
         per = _safe_float(fund["PER"].iloc[-1]) if not fund.empty else 0
         
-        # Scoring Logic
         score = (tech['rsi14'] * 0.3) + (tech['weekly_return'] * 0.4) + (sentiment * 0.3)
         
         scored_results.append({
@@ -130,9 +121,13 @@ def main():
         })
         time.sleep(0.05)
 
+    if not scored_results:
+        print("No scoring results found.")
+        return
+
     df = pd.DataFrame(scored_results)
     df_sorted = df.sort_values(by="Total_Score", ascending=False)
-    portfolio = df_sorted.head(MAX_PORTFOLIO_STOCKS)
+    portfolio = df_sorted.head(30)
     
     today_str = datetime.now().strftime('%Y-%m-%d')
     filename = f"reports/3S_Portfolio_{today_str}.md"
