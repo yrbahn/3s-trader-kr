@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # --- Configuration ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
+MAX_PORTFOLIO_STOCKS = 30 
 
 def _safe_float(x: Any) -> Optional[float]:
     try:
@@ -127,7 +128,7 @@ def main():
 
     df = pd.DataFrame(scored_results)
     df_sorted = df.sort_values(by="Total_Score", ascending=False)
-    portfolio = df_sorted.head(30)
+    portfolio = df_sorted.head(30).copy()
     
     today_str = datetime.now().strftime('%Y-%m-%d')
     filename = f"reports/3S_Portfolio_{today_str}.md"
@@ -138,6 +139,10 @@ def main():
         f.write(f"- **시장 기준:** KOSDAQ 상위 종목\n- **데이터 기준일:** {target_date}\n\n")
         f.write("## 🎯 AI Selection (Top 30)\n")
         f.write(portfolio.to_markdown(index=False))
+        
+        f.write("\n\n## 🔎 선정 종목 리스트\n")
+        f.write(", ".join(portfolio['Stock Name'].tolist()))
+        
         f.write("\n\n*본 리포트는 pykrx 엔진을 사용하여 실시간 코스닥 데이터를 분석한 결과입니다.*")
 
     print(f"Report generated: {filename}")
