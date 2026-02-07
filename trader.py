@@ -48,29 +48,24 @@ def get_latest_trading_day():
 def get_stock_universe() -> List[str]:
     """시가총액 기준 상위 종목 Universe를 구성합니다."""
     target_date = get_latest_trading_day()
-    market = "KOSDAQ" if "KOSDAQ" in UNIVERSE_SOURCE.upper() else "KOSPI"
     
     try:
-        # get_market_cap_by_ticker 대신 get_market_cap(일자) 사용 (더 안정적인 bulk API)
-        df = stock.get_market_cap(target_date)
-        if df.empty:
-            # 특정 일자 조회가 실패하면 최근 3일 중 데이터가 있는 날을 찾음
+        # KOSDAQ 시장 상위 30개 종목 추출
+        df_kq = stock.get_market_cap(target_date, market="KOSDAQ")
+        if df_kq.empty:
+            # 실패 시 최근 3일 중 데이터 확인
             for i in range(1, 4):
                 prev_date = (datetime.now() - timedelta(days=i)).strftime("%Y%m%d")
-                df = stock.get_market_cap(prev_date)
-                if not df.empty: break
+                df_kq = stock.get_market_cap(prev_date, market="KOSDAQ")
+                if not df_kq.empty: break
         
-        if df.empty:
-            # 최후의 수단: 하드코딩된 주요 종목 반환
-            return ['005930', '000660', '373220', '005380', '068270']
+        if not df_kq.empty:
+            return df_kq.sort_values(by="시가총액", ascending=False).head(30).index.tolist()
             
-        # KOSPI/KOSDAQ 구분 필요시 필터링 로직 추가 가능
-        # 여기서는 전체 시장 시총 상위 30개를 기본으로 하되 요청하신 코스닥 위주로 구성
-        # pykrx의 get_market_cap 결과에는 시장 구분이 없으므로 전체 top 30 사용
-        top_tickers = df.sort_values(by="시가총액", ascending=False).head(30).index.tolist()
-        return top_tickers
+        # 최후의 수단
+        return ['247540', '086520', '191170', '028300', '291230'] # 에코프로비엠, 에코프로 등
     except:
-        return ['005930', '000660', '373220', '005380', '068270']
+        return ['247540', '086520', '191170', '028300', '291230']
 
 def _technical_analysis(ticker: str, target_date: str) -> Optional[Dict[str, Any]]:
     """Scoring Module - Technical Dimension (pykrx 기반)"""
