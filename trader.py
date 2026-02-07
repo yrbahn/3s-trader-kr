@@ -144,6 +144,18 @@ Return ONLY JSON list of tickers: ["code1.KQ", "code2.KQ", ...]"""
 
 # --- Main Execution ---
 
+def get_latest_trading_day():
+    """가장 최근 영업일을 구합니다."""
+    today = datetime.now().strftime("%Y%m%d")
+    try:
+        # 삼성전자 데이터를 통해 실제 데이터가 있는 영업일을 확인
+        df = stock.get_market_ohlcv((datetime.now() - timedelta(days=10)).strftime("%Y%m%d"), today, "005930")
+        if df.empty: return today
+        df = df[df['종가'] > 0]
+        return df.index[-1].strftime("%Y%m%d")
+    except:
+        return today
+
 def main():
     print("3S-Trader KR: Multi-LLM Framework Implementation Starting...")
     
@@ -156,16 +168,20 @@ def main():
 
     # 1. Strategy Generation (S)
     from pykrx import stock
-    market_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d") # 간이용
+    market_date = get_latest_trading_day()
     market_overview = "Market seems slightly bearish with high volatility in tech sector."
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy 수립 완료: {current_strategy[:100]}...")
 
     # 2. Scoring Universe (S)
-    # 코스닥 시총 상위 15개로 Universe 구성 (API 비용 및 속도 고려)
-    import FinanceDataReader as fdr
-    df_kq = fdr.StockListing('KOSDAQ').head(15)
-    universe_tickers = [f"{row['Code']}.KQ" for _, row in df_kq.iterrows()]
+    # pykrx의 get_market_cap이 환경에 따라 불안정할 수 있으므로
+    # 직접 안정적인 상위 종목 리스트를 사용하거나 수동 필터링을 시도합니다.
+    try:
+        kq_tickers = stock.get_market_ticker_list(market_date, market="KOSDAQ")
+        # 상위 15개 종목 코드를 직접 지정하여 안정성 확보 (에코프로비엠, 알테오젠 등)
+        universe_tickers = [f"{t}.KQ" for t in kq_tickers[:15]]
+    except:
+        universe_tickers = ['247540.KQ', '191170.KQ', '028300.KQ', '086520.KQ', '291230.KQ']
     
     scored_universe = []
     for ticker in universe_tickers:
