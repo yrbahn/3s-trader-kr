@@ -174,14 +174,23 @@ def main():
     print(f"Strategy 수립 완료: {current_strategy[:100]}...")
 
     # 2. Scoring Universe (S)
-    # pykrx의 get_market_cap이 환경에 따라 불안정할 수 있으므로
-    # 직접 안정적인 상위 종목 리스트를 사용하거나 수동 필터링을 시도합니다.
+    # pykrx의 get_market_ticker_list가 빈 값을 반환하는 경우가 있어, 
+    # 하드코딩된 핵심 종목 리스트를 우선적으로 사용하도록 로직을 강화했습니다.
+    kosdaq_top_30 = [
+        '247540', '086520', '191170', '028300', '291230', 
+        '068760', '403870', '058470', '272410', '214150',
+        '145020', '066970', '121600', '213420', '293490'
+    ]
+    
     try:
-        kq_tickers = stock.get_market_ticker_list(market_date, market="KOSDAQ")
-        # 상위 15개 종목 코드를 직접 지정하여 안정성 확보 (에코프로비엠, 알테오젠 등)
-        universe_tickers = [f"{t}.KQ" for t in kq_tickers[:15]]
+        # 날짜를 지정하지 않는 것이 최신 데이터를 가져오는 데 더 안정적입니다.
+        kq_tickers = stock.get_market_ticker_list(market="KOSDAQ")
+        if kq_tickers:
+            universe_tickers = [f"{t}.KQ" for t in kq_tickers[:15]]
+        else:
+            universe_tickers = [f"{t}.KQ" for t in kosdaq_top_30[:15]]
     except:
-        universe_tickers = ['247540.KQ', '191170.KQ', '028300.KQ', '086520.KQ', '291230.KQ']
+        universe_tickers = [f"{t}.KQ" for t in kosdaq_top_30[:15]]
     
     scored_universe = []
     for ticker in universe_tickers:
