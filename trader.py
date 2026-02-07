@@ -123,6 +123,14 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         ma20 = get_val(df['Close'].rolling(window=20).mean())
         ma60 = get_val(df['Close'].rolling(window=60).mean())
         
+        # 이격도 (Price vs MA Gaps)
+        gap5 = round(((last_close / ma5) - 1) * 100, 2)
+        gap20 = round(((last_close / ma20) - 1) * 100, 2)
+        
+        # 모멘텀 지표 (1개월, 3개월 수익률)
+        mom1m = round(((last_close / df['Close'].iloc[-20]) - 1) * 100, 2) if len(df) >= 20 else 0
+        mom3m = round(((last_close / df['Close'].iloc[-60]) - 1) * 100, 2) if len(df) >= 60 else 0
+        
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
@@ -135,6 +143,8 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
             "weekly_return": float(weekly_return),
             "volatility": float(volatility),
             "ma_status": "정배열" if ma5 > ma20 > ma60 else "역배열/혼조",
+            "ma_gaps": {"ma5": gap5, "ma20": gap20},
+            "momentum": {"1m": mom1m, "3m": mom3m},
             "rsi": float(rsi)
         }
     except Exception as e:
@@ -213,13 +223,14 @@ def scoring_agent(ticker: str, data: Dict[str, Any]) -> Dict[str, int]:
         return {d: 5 for d in SCORING_DIMENSIONS}
         
     prompt = f"""Analyze {ticker} with following multidimensional data:
-[Technical] Price: {data['price']}, Weekly Return: {data['weekly_return']}%, Volatility: {data['volatility']}%, MA Status: {data['ma_status']}, RSI: {data['rsi']}
+[Technical] Price: {data['price']}, Weekly: {data['weekly_return']}%, 1m Mom: {data['momentum']['1m']}%, 3m Mom: {data['momentum']['3m']}%
+[MA & RSI] Status: {data['ma_status']}, Gap5: {data['ma_gaps']['ma5']}%, Gap20: {data['ma_gaps']['ma20']}%, RSI: {data['rsi']}
 [Fundamental] PER: {data['per']}, PBR: {data['pbr']}, Div Yield: {data['div_yield']}%
 [Investor] Foreign Net: {data['foreign']}, Institution Net: {data['institution']} (Last 5 days)
 [News] Headlines: {data['headlines']}
 
 Assign scores (1-10) for: {SCORING_DIMENSIONS}
-Focus on Logical Consistency between Fundamental (Health/Growth) and Technical (Momentum/Risk).
+Focus on Technical Momentum (Gap/ROC) and Fundamental Value consistency.
 
 Return ONLY JSON format:
 {{"scores": {{"dim_name": score, ...}}, "rationale": "one sentence summary"}}"""
