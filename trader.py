@@ -50,12 +50,18 @@ def get_stock_universe() -> List[str]:
         
         # Filter for KOSDAQ only
         kq_tickers = stock.get_market_ticker_list(target_date, market="KOSDAQ")
+        # Ensure ticker format matches (pykrx ticker list is usually 6 digits)
         df_kq = df[df.index.isin(kq_tickers)]
         
+        # If still empty or too small, use broader market cap but label properly
+        if len(df_kq) < 5:
+            print("Warning: KOSDAQ specific filtering returned too few results. Using entire market cap.")
+            df_kq = df
+
         top_tickers = df_kq.sort_values(by="시가총액", ascending=False).head(35).index.tolist()
         return top_tickers
     except:
-        return ['247540', '191170', '028300', '086520', '291230', '068760', '403870', '058470', '272410', '214150']
+        return ['247540', '086520', '028300', '291230', '068760', '403870', '058470', '272410', '214150', '145020']
 
 def _technical_analysis(ticker: str, target_date: str) -> Optional[Dict[str, Any]]:
     try:
