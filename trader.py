@@ -71,26 +71,64 @@ def get_latest_trading_day():
     except:
         return today
 
-def get_stock_universe() -> List[str]:
-    """FinanceDataReader를 사용하여 코스닥 상위 종목 Universe를 구성합니다."""
-    fallback_tickers = [
-        '247540', '086520', '191170', '028300', '291230', 
-        '068760', '403870', '058470', '272410', '214150'
-    ]
+def is_profitable(code: str) -> bool:
+    """네이버 금융에서 해당 종목이 최근 분기 영업이익 흑자인지 확인합니다."""
     try:
-        df_kq = fdr.StockListing('KOSDAQ')
-        if df_kq.empty:
-            return [f"{t}.KQ" for t in fallback_tickers]
+        url = f"https://finance.naver.com/item/main.naver?code={code}"
+        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        soup = BeautifulSoup(res.text, "html.parser")
         
-        cap_col = next((c for c in ['Marcap', '시가총액', 'Amount'] if c in df_kq.columns), None)
-        if cap_col:
-            df_kq = df_kq.sort_values(by=cap_col, ascending=False)
+        # 기업실적분석 테이블 찾기 (보통 id='content' 내의 테이블)
+        # 영업이익은 보통 두 번째 행
+        table = soup.find("table", class_="tb_type1 tb_num")
+        if not table: return True # 테이블 못 찾으면 일단 포함 (보수적)
+        
+        # 영업이익 행 찾기
+        rows = table.find_all("tr")
+        op_row = None
+        for row in rows:
+            if "영업이익" in row.text:
+                op_row = row
+                break
+        
+        if not op_row: return True
+        
+        # 최근 실적값들 (보통 마지막 2-3개가 최근 분기/예상)
+        cols = op_row.find_all("td")
+        for col in reversed(cols):
+            val_str = col.text.strip().replace(",", "")
+            if val_str and val_str != "-":
+                try:
+                    return float(val_str) > 0
+                except: continue
+        return True
+    except:
+        return True
+
+def get_stock_universe() -> List[str]:
+    """FinanceDataReader를 사용하여 코스닥 시총 상위 100개 중 흑자 기업 Universe를 구성합니다."""
+    fallback_tickers = ['247540', '086520', '191170', '028300', '291230']
+    try:
+        print("코스닥 시총 상위 100개 종목 수집 및 흑자 필터링 중...")
+        df_kq = fdr.StockListing('KOSDAQ')
+        
+        cap_col = next((c for c in ['Marcap', '시가총액'] if c in df_kq.columns), 'Marcap')
+        df_kq = df_kq.sort_values(by=cap_col, ascending=False).head(100)
         
         code_col = next((c for c in ['Code', 'Symbol', '종목코드'] if c in df_kq.columns), 'Code')
-        top_tickers = df_kq[code_col].head(15).tolist()
-        return [f"{t}.KQ" for t in top_tickers]
+        top_100_codes = df_kq[code_col].tolist()
+        
+        profitable_universe = []
+        for code in top_100_codes:
+            if is_profitable(code):
+                profitable_universe.append(f"{code}.KQ")
+                print(f"Added {code} (Profitable)", end="\r")
+            
+        print(f"\n최종 Universe 구성 완료: {len(profitable_universe)} 종목")
+        return profitable_universe
+        
     except Exception as e:
-        print(f"Universe 수집 오류 (로컬 리스트 사용): {e}")
+        print(f"Universe 수집 오류: {e}")
         return [f"{t}.KQ" for t in fallback_tickers]
 
 # --- 1. Scoring Module ---
