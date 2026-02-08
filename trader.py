@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # --- Configuration ---
 STATE_DIR = "state"
 STRATEGY_STATE_PATH = os.path.join(STATE_DIR, "strategy_state.json")
+ANALYSIS_CACHE_PATH = os.path.join(STATE_DIR, "analysis_cache.json")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
@@ -38,9 +39,8 @@ SCORING_DIMENSIONS = [
 def _extract_json(text: str) -> Any:
     text = text.strip()
     match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
-    if match:
-        return json.loads(match.group(1))
-    raise ValueError("No JSON found in LLM response")
+    if match: return json.loads(match.group(1))
+    raise ValueError("No JSON found")
 
 def _openai_chat(messages: List[Dict[str, str]], temperature=0.2) -> str:
     if not OPENAI_API_KEY: return "{}"
@@ -59,43 +59,52 @@ def get_latest_trading_day():
         return df.index[-1].strftime("%Y%m%d")
     except: return today
 
-def is_profitable(code: str) -> bool:
+def get_stock_universe(limit=30) -> List[str]:
+    """코스닥 시총 상위 limit개 종목을 가져옵니다."""
     try:
-        url = f"https://finance.naver.com/item/main.naver?code={code}"
-        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(res.text, "html.parser")
-        table = soup.find("table", class_="tb_type1 tb_num")
-        if not table: return True
-        rows = table.find_all("tr")
-        op_row = next((r for r in rows if "영업이익" in r.text), None)
-        if not op_row: return True
-        cols = op_row.find_all("td")
-        for col in reversed(cols):
-            val_str = col.text.strip().replace(",", "")
-            if val_str and val_str != "-":
-                try: return float(val_str) > 0
-                except: continue
-        return True
-    except: return True
-
-def get_stock_universe() -> List[str]:
-    try:
-        print("코스닥 시총 상위 100개 종목 수집 중...")
+        print(f"코스닥 시총 상위 {limit}개 종목 수집 중...")
         df_kq = fdr.StockListing('KOSDAQ')
-        df_kq = df_kq.sort_values(by='Marcap', ascending=False).head(100)
-        top_codes = df_kq['Code'].tolist()
-        
-        print(f"흑자 필터링 시작 (대상: {len(top_codes)} 종목)...")
-        profitable_universe = []
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_code = {executor.submit(is_profitable, c): c for c in top_codes}
-            for future in as_completed(future_to_code):
-                if future.result(): profitable_universe.append(f"{future_to_code[future]}.KQ")
-        print(f"\n최종 Universe 구성 완료: {len(profitable_universe)} 종목")
-        return profitable_universe
+        df_kq = df_kq.sort_values(by='Marcap', ascending=False).head(limit)
+        return [f"{c}.KQ" for c in df_kq['Code'].tolist()]
     except Exception as e:
         print(f"Universe 수집 오류: {e}")
         return ["247540.KQ", "086520.KQ"]
+
+# --- Checkpoint System ---
+
+def load_cache(today_str: str) -> Dict[str, Any]:
+    if os.path.exists(ANALYSIS_CACHE_PATH):
+        try:
+            data = json.load(open(ANALYSIS_CACHE_PATH))
+            if data.get("date") == today_str: return data.get("results", {})
+        except: pass
+    return {}
+
+def save_cache(today_str: str, results: Dict[str, Any]):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    json.dump({"date": today_str, "results": results}, open(ANALYSIS_CACHE_PATH, 'w'), ensure_ascii=False, indent=2)
+
+def _normalize_scores(raw_scores: Dict[str, Any]) -> Dict[str, int]:
+    """LLM 응답 점수를 정규화합니다 (NaN 방지)."""
+    normalized = {d: 5 for d in SCORING_DIMENSIONS}
+    mapping = {
+        "financial_health": ["financial_health", "financial", "profitability", "valuation", "fundamental_strength"],
+        "growth_potential": ["growth_potential", "growth", "potential", "growth_prospects"],
+        "news_sentiment": ["news_sentiment", "sentiment", "market_sentiment", "overall_tone"],
+        "news_impact": ["news_impact", "impact", "influence", "news_influence"],
+        "price_momentum": ["price_momentum", "momentum", "technical", "trend", "price_momentum"],
+        "volatility_risk": ["volatility_risk", "volatility", "risk", "stability", "risk_level"]
+    }
+    for target, syns in mapping.items():
+        for s in syns:
+            if s in raw_scores:
+                try: 
+                    val = raw_scores[s]
+                    if isinstance(val, (int, float)):
+                        normalized[target] = int(val)
+                        break
+                except: pass
+    return normalized
 
 # --- Core Data Fetcher ---
 
@@ -105,158 +114,147 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         df = yf.download(ticker, period="6mo", interval="1d", progress=False)
         if df.empty: return {}
         
-        # Series indexing fix for FutureWarning
-        last_close_val = df['Close'].iloc[-1]
-        last_close = float(last_close_val.iloc[0]) if hasattr(last_close_val, 'iloc') else float(last_close_val)
-        
-        prev_close_val = df['Close'].iloc[-6]
-        prev_close = float(prev_close_val.iloc[0]) if hasattr(prev_close_val, 'iloc') else float(prev_close_val)
-        
+        def safe_get(series, idx=-1):
+            val = series.iloc[idx]
+            return float(val.iloc[0]) if hasattr(val, 'iloc') else float(val)
+
+        last_close = safe_get(df['Close'])
+        prev_close = safe_get(df['Close'], -6)
         weekly_return = round(((last_close / prev_close) - 1) * 100, 2)
         vol_series = df['Close'].pct_change().tail(20).std()
         volatility = round(float(vol_series.iloc[0] if hasattr(vol_series, 'iloc') else vol_series) * 100, 2)
         
-        ma5_series = df['Close'].rolling(window=5).mean().iloc[-1]
-        ma5 = float(ma5_series.iloc[0] if hasattr(ma5_series, 'iloc') else ma5_series)
+        ma5 = safe_get(df['Close'].rolling(window=5).mean())
+        ma20 = safe_get(df['Close'].rolling(window=20).mean())
+        ma60 = safe_get(df['Close'].rolling(window=60).mean())
         
-        ma20_series = df['Close'].rolling(window=20).mean().iloc[-1]
-        ma20 = float(ma20_series.iloc[0] if hasattr(ma20_series, 'iloc') else ma20_series)
+        tech_summary = f"Price: {int(last_close)}, Weekly: {weekly_return}%, Vol: {volatility}%, MA: {'Bullish' if ma5>ma20>ma60 else 'Neutral'}, Gaps: MA5:{round(((last_close/ma5)-1)*100,2)}%, MA20:{round(((last_close/ma20)-1)*100,2)}%"
         
-        ma60_series = df['Close'].rolling(window=60).mean().iloc[-1]
-        ma60 = float(ma60_series.iloc[0] if hasattr(ma60_series, 'iloc') else ma60_series)
-        
-        gap5 = round(((last_close / ma5) - 1) * 100, 2)
-        gap20 = round(((last_close / ma20) - 1) * 100, 2)
-        
-        mom1m_val = df['Close'].iloc[-20] if len(df) >= 20 else df['Close'].iloc[0]
-        mom1m_price = float(mom1m_val.iloc[0] if hasattr(mom1m_val, 'iloc') else mom1m_val)
-        mom1m = round(((last_close / mom1m_price) - 1) * 100, 2)
-        
-        mom3m_val = df['Close'].iloc[-60] if len(df) >= 60 else df['Close'].iloc[0]
-        mom3m_price = float(mom3m_val.iloc[0] if hasattr(mom3m_val, 'iloc') else mom3m_val)
-        mom3m = round(((last_close / mom3m_price) - 1) * 100, 2)
-        
-        delta = df['Close'].diff(); gain = (delta.where(delta > 0, 0)).rolling(window=14).mean(); loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / loss
-        rsi_val = rs.iloc[-1]
-        last_rs = float(rsi_val.iloc[0] if hasattr(rsi_val, 'iloc') else rsi_val)
-        rsi = round(100 - (100 / (1 + last_rs)), 2)
-        
-        tech_data = {"price": int(last_close), "weekly_return": weekly_return, "volatility": volatility, "ma_status": "정배열" if ma5 > ma20 > ma60 else "역배열/혼조", "ma_gaps": {"ma5": gap5, "ma20": gap20}, "momentum": {"1m": mom1m, "3m": mom3m}, "rsi": rsi}
-        
-        # Fundamental & Investor (Naver)
-        url_main = f"https://finance.naver.com/item/main.naver?code={code}"
-        soup_main = BeautifulSoup(requests.get(url_main, headers={"User-Agent": "Mozilla/5.0"}).text, "html.parser")
-        def _parse_naver_val(soup, id_str):
-            try: return float(soup.find("em", id=id_str).text.replace(",", "").replace("배", "").replace("%", ""))
+        # Fundamental (Naver)
+        soup_main = BeautifulSoup(requests.get(f"https://finance.naver.com/item/main.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
+        def _parse(s, i):
+            try: return float(s.find("em", id=i).text.replace(",","").replace("배","").replace("%",""))
             except: return 0.0
-        fundamental = {"per": _parse_naver_val(soup_main, "_per"), "pbr": _parse_naver_val(soup_main, "_pbr"), "div_yield": _parse_naver_val(soup_main, "_dvr")}
+        fund_data = {"per": _parse(soup_main, "_per"), "pbr": _parse(soup_main, "_pbr"), "div": _parse(soup_main, "_dvr")}
         
-        url_frgn = f"https://finance.naver.com/item/frgn.naver?code={code}"
-        soup_frgn = BeautifulSoup(requests.get(url_frgn, headers={"User-Agent": "Mozilla/5.0"}).text, "html.parser")
-        rows = soup_frgn.select("table.type2 tr"); f_sum, i_sum, count = 0, 0, 0
-        for row in rows:
+        soup_frgn = BeautifulSoup(requests.get(f"https://finance.naver.com/item/frgn.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
+        f_sum, i_sum, count = 0, 0, 0
+        for row in soup_frgn.select("table.type2 tr"):
             cols = row.find_all("td")
             if len(cols) >= 9:
-                try: f_sum += int(cols[6].text.replace(",", "")); i_sum += int(cols[5].text.replace(",", "")); count += 1
+                try: f_sum += int(cols[6].text.replace(",","")); i_sum += int(cols[5].text.replace(",","")); count += 1
                 except: continue
             if count >= 5: break
-        investor = {"foreign": f_sum, "institution": i_sum}
         
-        news_contexts = []
-        res_news = requests.get(f"https://m.stock.naver.com/api/news/stock/{code}?pageSize=5&page=1", headers={"User-Agent": "Mozilla/5.0"}).json()
-        for entry in res_news:
-            if 'items' in entry:
-                for item in entry['items']:
-                    news_contexts.append(f"[{item.get('title', '')}] {item.get('body', '')}".replace('&quot;', '"'))
-        return {**tech_data, **fundamental, **investor, "news_contexts": news_contexts}
-    except Exception as e: return {}
+        news_res = requests.get(f"https://m.stock.naver.com/api/news/stock/{code}?pageSize=5&page=1", headers={"User-Agent":"Mozilla/5.0"}).json()
+        news_contexts = [f"[{i.get('title','')}] {i.get('body','')}".replace('&quot;','"') for e in news_res if 'items' in e for i in e['items']]
+        
+        return {"tech_text": tech_summary, "fund_text": f"Fund: {fund_data}, Investor: F:{f_sum}, I:{i_sum}", "news_text": "\n".join(news_contexts), "price": int(last_close)}
+    except: return {}
 
-# --- Efficient Multi-Agent Analysis ---
+# --- Multi-Agent Pipeline (Prompts 1-6) ---
 
-def analyze_stock_unified(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
-    """논문의 4가지 에이전트 역할을 하나의 고밀도 프롬프트로 통합 (효율 극대화)"""
-    if LLM_DISABLED or not data: return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
-    
-    prompt = f"""
-Act as a panel of experts for stock {ticker}. Follow these steps in one internal reasoning process:
+def news_agent(t, raw):
+    p = f"You are a financial news analysis agent. Task: Summarize recent news for {t}.\nContent: {raw}\nProvide a concise weekly summary."
+    return _openai_chat([{"role": "user", "content": p}])
 
-1. [News Agent]: Summarize these: {data.get('news_contexts', [])}
-2. [Technical Agent]: Analyze: Price {data['price']}, Weekly {data['weekly_return']}%, 1m/3m Momentum {data['momentum']}, RSI {data['rsi']}, MA Gaps {data['ma_gaps']}
-3. [Fundamental Agent]: Analyze: PER {data['per']}, PBR {data['pbr']}, DivYield {data['div_yield']}%, InvestorNet {data['foreign']}/{data['institution']}
-4. [Score Agent (Prompt4)]: Evaluate along six dimensions (1-10). Provide 1-2 sentence justification for each.
-   Dimensions: Financial Health, Growth Potential, News Sentiment, News Impact, Price Momentum, Volatility Risk (High score = low risk).
+def technical_agent(t, raw):
+    p = f"You are a stock price analysis agent. Task: Analyze technical indicators for {t}.\nData: {raw}\nProvide a technical analysis summary."
+    return _openai_chat([{"role": "user", "content": p}])
 
-Return ONLY JSON:
-{{
-  "summaries": {{ "news": "...", "technical": "...", "fundamental": "..." }},
-  "scores": {{ "financial_health": 5, "growth_potential": 5, "news_sentiment": 5, "news_impact": 5, "price_momentum": 5, "volatility_risk": 5 }},
-  "justifications": {{ "financial_health": "...", ... }}
-}}
-"""
-    try: return _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
+def fundamental_agent(t, raw):
+    p = f"You are a stock fundamentals analysis agent. Task: Analyze financial performance for {t}.\nData: {raw}\nProvide a summary of fundamental trends."
+    return _openai_chat([{"role": "user", "content": p}])
+
+def score_agent(t, n, f, te):
+    p = f"Expert evaluator. Stock: {t}\nNews: {n}\nFund: {f}\nTech: {te}\nScore exactly 6 dimensions (1-10): financial_health, growth_potential, news_sentiment, news_impact, price_momentum, volatility_risk.\nReturn ONLY JSON with 'scores' (exact keys) and 'justifications' keys."
+    try:
+        res = _extract_json(_openai_chat([{"role": "user", "content": p}]))
+        res['scores'] = _normalize_scores(res.get('scores', {}))
+        return res
     except: return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
 
-def strategy_agent(trajectory: List[Dict], market_overview: str) -> str:
-    prompt = f"Market: {market_overview}\nHistory: {trajectory}\nTask: Define selection strategy. Prioritize dimensions. Return concise text."
-    try: return _openai_chat([{"role": "user", "content": prompt}], temperature=0.5)
-    except: return "Focus on momentum and value."
+def strategy_agent(traj, overview):
+    p = f"Strategic Advisor. History: {traj}\nMarket: {overview}\nTask: Define refined data-driven strategy for the upcoming week based on history. Return concise professional text."
+    return _openai_chat([{"role": "user", "content": p}], temperature=0.5)
 
-def selection_agent(strategy: str, candidates: List[Dict]) -> List[str]:
-    prompt = f"Strategy: {strategy}\nCandidates: {candidates}\nTask: Select top {MAX_PORTFOLIO_STOCKS}. Return JSON list of tickers."
-    try: return _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
-    except: return [c['ticker'] for c in candidates[:MAX_PORTFOLIO_STOCKS]]
+def selection_agent(strat, cand):
+    reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in cand])
+    p = f"""Expert stock-picker. Strategy: {strat}\n\nCandidates:\n{reports}\n\nSelect top {MAX_PORTFOLIO_STOCKS}. Return ONLY JSON with 'selected_stocks' (list of {{stock_code, weight}} where stock_code is the ticker) and 'reasoning'."""
+    try: return _extract_json(_openai_chat([{"role": "user", "content": p}]))
+    except: return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in cand[:5]]}
 
 def get_market_overview() -> str:
     try:
         end = get_latest_trading_day(); start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=30)).strftime("%Y%m%d")
         df = stock.get_market_ohlcv(start, end, "101", market="KOSDAQ")
-        curr = df['종가'].iloc[-1]; change = round(((curr / df['종가'].iloc[-2]) - 1) * 100, 2)
-        news = [t.text.strip() for t in BeautifulSoup(requests.get("https://finance.naver.com/news/mainnews.naver", headers={"User-Agent": "Mozilla/5.0"}).text, "html.parser").select(".mainnews_list .articleSubject a")[:3]]
-        return f"KOSDAQ: {curr} ({change}%). News: {', '.join(news)}"
-    except: return "Market stable."
+        news = [t.text.strip() for t in BeautifulSoup(requests.get("https://finance.naver.com/news/mainnews.naver", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser").select(".mainnews_list .articleSubject a")[:3]]
+        return f"KOSDAQ: {df['종가'].iloc[-1]}. News: {', '.join(news)}"
+    except: return "Stable market."
 
 def main():
-    print("3S-Trader KR: Efficient Multi-Agent Mode Starting...")
-    if not os.path.exists(STATE_DIR): os.makedirs(STATE_DIR)
+    print("3S-Trader KR: Perfect 4-Stage Multi-Agent Mode (Top 30)")
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    
+    # 캐시 완전 초기화 (새 시작)
+    if os.path.exists(ANALYSIS_CACHE_PATH): os.remove(ANALYSIS_CACHE_PATH)
+    cache = {}
+    
+    market_overview = get_market_overview()
     trajectory = []
     if os.path.exists(STRATEGY_STATE_PATH):
         try: trajectory = json.load(open(STRATEGY_STATE_PATH)).get("trajectory", [])
         except: pass
-
-    market_overview = get_market_overview()
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy: {current_strategy[:50]}...")
 
-    universe_tickers = get_stock_universe()
-    scored_universe = []
+    universe = get_stock_universe(limit=30)
     
-    def process_stock(t):
-        data = _get_stock_data(t)
-        if not data: return None
-        analysis = analyze_stock_unified(t, data)
-        return {"ticker": t, "name": stock.get_market_ticker_name(t.split('.')[0]), "scores": analysis.get("scores", {}), "data": data}
+    def process(t):
+        raw = _get_stock_data(t)
+        if not raw: return None
+        n, te, f = news_agent(t, raw['news_text']), technical_agent(t, raw['tech_text']), fundamental_agent(t, raw['fund_text'])
+        res = score_agent(t, n, f, te)
+        return t, {"ticker": t, "name": stock.get_market_ticker_name(t.split('.')[0]), "scores": res['scores'], "data": {"price": raw['price']}}
 
-    print("Analyzing stocks in parallel...")
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(process_stock, t) for t in universe_tickers]
-        for future in as_completed(futures):
-            res = future.result()
-            if res: scored_universe.append(res)
-    
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = [ex.submit(process, t) for t in universe]
+        for fut in as_completed(futures):
+            r = fut.result()
+            if r: 
+                cache[r[0]] = r[1]
+                save_cache(today_str, cache)
+                print(f"Verified & Cached {r[0]}")
+
+    scored_universe = list(cache.values())
     scored_sorted = sorted(scored_universe, key=lambda x: sum(x['scores'].values()), reverse=True)
-    final_tickers = selection_agent(current_strategy, scored_sorted[:30])
+    sel_res = selection_agent(current_strategy, scored_sorted[:30])
+    final_stocks = sel_res.get("selected_stocks", [])
+    final_tickers = [str(s.get('stock_code', '')).strip().upper() for s in final_stocks]
     
-    trajectory.append({"date": datetime.now().strftime("%Y-%m-%d"), "strategy": current_strategy, "selected": final_tickers, "perf": 0.0})
-    json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'))
+    trajectory.append({"date": today_str, "strategy": current_strategy, "selected": final_stocks, "perf": 0.0})
+    json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'), ensure_ascii=False)
 
-    today_str = datetime.now().strftime('%Y-%m-%d'); filename = f"reports/3S_Trader_Report_{today_str}.md"; os.makedirs("reports", exist_ok=True)
+    filename = f"reports/3S_Trader_Report_{today_str}.md"; os.makedirs("reports", exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n## 🎯 2. Selection\n")
-        selected_data = [s for s in scored_universe if s['ticker'] in final_tickers]
-        if selected_data: f.write(pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "현재가": s['data']['price'], "Total점수": sum(s['scores'].values())} for s in selected_data]).to_markdown(index=False))
+        
+        selected_data = []
+        weight_map = {}
+        for s in final_stocks:
+            code = str(s.get('stock_code', '')).strip().upper()
+            match = next((x for x in scored_universe if x['ticker'].upper() == code), None)
+            if match:
+                selected_data.append(match)
+                weight_map[match['ticker']] = s.get('weight', 0)
+
+        if selected_data:
+            df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중(%)": weight_map.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_data])
+            f.write(df.sort_values("비중(%)", ascending=False).to_markdown(index=False))
+        
         f.write("\n\n## 📊 3. Scoring Detail\n")
         f.write(pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], **s['scores']} for s in scored_universe]).to_markdown(index=False))
-    print(f"Report: {filename}")
+    
+    print(f"Report complete: {filename}")
 
 if __name__ == "__main__": main()
