@@ -329,7 +329,7 @@ def main():
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy: {current_strategy[:50]}...")
 
-    universe = get_stock_universe(limit=50)
+    universe = get_stock_universe(limit=200)
     
     def process(t):
         raw = _get_stock_data(t)
@@ -341,8 +341,9 @@ def main():
         # 중간 결과 출력 (확인용)
         print(f"\n[Analysis: {t}] Scores: {scores}")
         if 'justifications' in res:
-            first_key = list(res['justifications'].keys())[0]
-            print(f" - Reasoning: {res['justifications'][first_key]}")
+            keys = list(res['justifications'].keys())
+            if keys:
+                print(f" - Reasoning: {res['justifications'][keys[0]]}")
             
         return t, {
             "ticker": t, 
@@ -353,8 +354,8 @@ def main():
             "data": {"price": raw['price']}
         }
 
-    # 병렬 처리 제어 (Gemini의 경우 Rate Limit 방지를 위해 worker 수 조정)
-    workers = 1 if LLM_PROVIDER == "gemini" else 5
+    # 병렬 처리 제어 (Tier 1 할당량에 맞춰 worker 수 대폭 상향)
+    workers = 15 if LLM_PROVIDER == "gemini" else 5
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [ex.submit(process, t) for t in universe]
         for fut in as_completed(futures):
