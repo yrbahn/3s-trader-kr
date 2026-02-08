@@ -336,7 +336,22 @@ def main():
         if not raw: return None
         n, te, f = news_agent(t, raw['news_text']), technical_agent(t, raw['tech_text']), fundamental_agent(t, raw['fund_text'])
         res = score_agent(t, n, f, te)
-        return t, {"ticker": t, "name": stock.get_market_ticker_name(t.split('.')[0]), "scores": res['scores'], "data": {"price": raw['price']}}
+        scores = res.get('scores', {})
+        
+        # 중간 결과 출력 (확인용)
+        print(f"\n[Analysis: {t}] Scores: {scores}")
+        if 'justifications' in res:
+            first_key = list(res['justifications'].keys())[0]
+            print(f" - Reasoning: {res['justifications'][first_key]}")
+            
+        return t, {
+            "ticker": t, 
+            "name": stock.get_market_ticker_name(t.split('.')[0]), 
+            "scores": scores,
+            "summaries": {"news": n, "technical": te, "fundamental": f},
+            "justifications": res.get("justifications", {}),
+            "data": {"price": raw['price']}
+        }
 
     # 병렬 처리 제어 (Gemini의 경우 Rate Limit 방지를 위해 worker 수 조정)
     workers = 1 if LLM_PROVIDER == "gemini" else 5
