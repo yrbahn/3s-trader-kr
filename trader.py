@@ -293,7 +293,21 @@ def main():
     for s in final_stocks:
         s['buy_price'] = price_map.get(str(s.get('stock_code','')), 0)
     
-    trajectory.append({"date": today_str, "strategy": current_strategy, "selected": final_stocks, "perf": 0.0})
+    # 4. Save State & Report
+    # 동일 날짜 중복 방지: 이미 오늘 날짜 기록이 있으면 업데이트, 없으면 추가
+    today_entry = {"date": today_str, "strategy": current_strategy, "selected": final_stocks, "perf": 0.0}
+    
+    found_idx = -1
+    for i, entry in enumerate(trajectory):
+        if entry.get("date") == today_str:
+            found_idx = i
+            break
+            
+    if found_idx >= 0:
+        trajectory[found_idx] = today_entry
+    else:
+        trajectory.append(today_entry)
+        
     trajectory = calculate_performance(trajectory) # 실시간 수익률 업데이트
     json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'), ensure_ascii=False, indent=2)
 
@@ -301,21 +315,33 @@ def main():
     with open(filename, "w", encoding="utf-8") as f:
         f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n")
         
+        # 성과 모니터링 섹션 (날짜별 1줄씩만 노출)
         if len(trajectory) > 1:
             f.write("## 📈 2. Performance Tracking (과거 추천 성과)\n")
             perf_list = []
-            for t_entry in reversed(trajectory[:-1]):
+            # 최신순 정렬 및 오늘 날짜 제외
+            past_entries = [e for e in trajectory if e['date'] != today_str]
+            for t_entry in reversed(past_entries):
                 picks = []
                 selected = t_entry.get('selected', [])
                 if isinstance(selected, list):
                     for s in selected:
                         if isinstance(s, dict):
-                            picks.append(f"{s.get('stock_code','')} ({s.get('return',0)}%)")
+                            # 종목명(또는 코드) + 수익률
+                            code = s.get('stock_code', 'N/A')
+                            ret = s.get('return', 0)
+                            picks.append(f"{code} ({ret}%)")
                         else:
                             picks.append(str(s))
-                picks_str = ", ".join(picks)
-                perf_list.append({"추천일": t_entry['date'], "추천종목 (수익률)": picks_str, "평균수익률": f"{t_entry.get('perf', 0)}%"})
-            f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
+                
+                perf_list.append({
+                    "추천일": t_entry['date'], 
+                    "추천종목 (현재수익률)": ", ".join(picks[:5]), # 최대 5개만 노출
+                    "평균수익률": f"{t_entry.get('perf', 0)}%"
+                })
+            
+            if perf_list:
+                f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
 
         f.write(f"## 🎯 3. Selection (Today's TOP 5)\n")
         selected_tickers = [str(s.get('stock_code','')) for s in final_stocks]

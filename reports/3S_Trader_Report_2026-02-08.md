@@ -1,22 +1,8 @@
 # 3S-Trader KR 전략 리포트 (2026-02-08)
 
 ## 🧠 1. Strategy
-Given persistent neutral performance in a stable market, the strategy shifts to **Catalyst-Driven Value**. Prioritize stocks with low Price-to-Book and Price-to-Earnings ratios, coupled with upcoming catalysts (earnings, product releases) identified through news sentiment analysis. Target oversold conditions (low RSI) for mean reversion. Enforce diversification with a maximum 20% weight per stock and require positive net income to avoid value traps. This aims to capture upside from price normalization, leveraging specific catalysts in undervalued assets.
+Given a stable market and recent neutral performance, the strategy shifts to **Catalyst-Driven Value**. Focus on undervalued stocks (low P/B, P/E) with upcoming catalysts identified through news sentiment analysis. Target oversold conditions (low RSI) for mean reversion. Enforce strict diversification (max 20% per stock) and require positive net income to mitigate risk. Aims to capitalize on price normalization driven by specific catalysts in fundamentally sound, undervalued assets.
 
-
-## 📈 2. Performance Tracking (과거 추천 성과)
-| 추천일        | 추천종목 (수익률)                                                                                                                 | 평균수익률   |
-|:-----------|:---------------------------------------------------------------------------------------------------------------------------|:--------|
-| 2026-02-08 | 동국제약 (086450.KQ) (0%), 레이크머티리얼즈 (281740.KQ) (0%), 코스메카코리아 (241710.KQ) (0%), 비츠로셀 (082920.KQ) (0%), 에스앤에스텍 (101490.KQ) (0%) | 0.0%    |
-| 2026-02-08 | 086450.KQ (0%), 241710.KQ (0%), 078600.KQ (0%), 082920.KQ (0%), 131970.KQ (0%)                                             | 0.0%    |
-| 2026-02-08 | 095340.KQ (0%), 083650.KQ (0%)                                                                                             | 0.0%    |
-| 2026-02-08 | 095340.KQ (0%), 214150.KQ (0%)                                                                                             | 0.0%    |
-| 2026-02-08 | 095340.KQ (0%), 0009K0.KQ (0%), 357780.KQ (0%), 068760.KQ (0%), 145020.KQ (0%)                                             | 0.0%    |
-| 2026-02-08 | 095340.KQ (0%), 357780.KQ (0%), 237690.KQ (0%), 068760.KQ (0%), 277810.KQ (0%)                                             | 0.0%    |
-| 2026-02-08 | 095340.KQ, 064760.KQ, 083650.KQ, 195940.KQ, 031980.KQ                                                                      | 0.0%    |
-| 2026-02-08 | 095340.KQ, 353810.KQ, 083650.KQ, 214180.KQ, 052400.KQ                                                                      | 0.0%    |
-| 2026-02-08 | 102710.KQ, 214180.KQ, 083930.KQ, 038390.KQ, 083650.KQ                                                                      | 0.0%    |
-| 2026-02-08 | 095340.KQ, 403870.KQ, 357780.KQ, 039030.KQ, 058470.KQ                                                                      | 0.0%    |
 
 ## 🎯 3. Selection (Today's TOP 5)
 
