@@ -18,8 +18,25 @@ STATE_DIR = "state"
 STRATEGY_STATE_PATH = os.path.join(STATE_DIR, "strategy_state.json")
 ANALYSIS_CACHE_PATH = os.path.join(STATE_DIR, "analysis_cache.json")
 
+# LLM Providers: "openai" or "gemini"
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o").strip()
+OPENAI_LITE_MODEL = "gpt-4o-mini" # Prompt 1-4용
+OPENAI_PRO_MODEL = "gpt-4o"      # Prompt 5-6용
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_LITE_MODEL = "gemini-2.0-flash-lite-preview-02-05" # Prompt 1-4용
+GEMINI_PRO_MODEL = "gemini-2.0-flash" # Prompt 5-6용 (Pro 대체)
+
+# Global Model Assignment based on Provider
+if LLM_PROVIDER == "gemini":
+    LITE_MODEL = GEMINI_LITE_MODEL
+    PRO_MODEL = GEMINI_PRO_MODEL
+else:
+    LITE_MODEL = OPENAI_LITE_MODEL
+    PRO_MODEL = OPENAI_PRO_MODEL
+
 LLM_DISABLED = os.getenv("LLM_DISABLED", "0").strip() == "1"
 
 MAX_PORTFOLIO_STOCKS = 5
@@ -38,18 +55,41 @@ SCORING_DIMENSIONS = [
 
 def _extract_json(text: str) -> Any:
     text = text.strip()
+    # 마크다운 블록 제거 로직 추가
+    if text.startswith("```"):
+        text = re.sub(r"^```json\s*", "", text)
+        text = re.sub(r"```$", "", text)
     match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
     if match: return json.loads(match.group(1))
     raise ValueError("No JSON found")
 
-def _openai_chat(messages: List[Dict[str, str]], temperature=0.2) -> str:
-    if not OPENAI_API_KEY: return "{}"
-    url = "https://api.openai.com/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
-    payload = {"model": OPENAI_MODEL, "messages": messages, "temperature": temperature}
-    res = requests.post(url, headers=headers, json=payload, timeout=60)
-    res.raise_for_status()
-    return res.json()["choices"][0]["message"]["content"]
+def _llm_chat(messages: List[Dict[str, str]], model: str = None, temperature=0.2) -> str:
+    # Use direct env check for robustness inside function
+    if os.getenv("LLM_DISABLED", "0").strip() == "1": return "{}"
+    
+    # Use LITE_MODEL as default if not specified
+    target_model = model if model else LITE_MODEL
+    
+    if LLM_PROVIDER == "gemini":
+        if not GEMINI_API_KEY: return "{}"
+        prompt = "\n".join([m['content'] for m in messages])
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": temperature}
+        }
+        res = requests.post(url, json=payload, timeout=60)
+        res.raise_for_status()
+        return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+    else:
+        # OpenAI
+        if not OPENAI_API_KEY: return "{}"
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
+        payload = {"model": target_model, "messages": messages, "temperature": temperature}
+        res = requests.post(url, headers=headers, json=payload, timeout=60)
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"]
 
 def get_latest_trading_day():
     today = datetime.now().strftime("%Y%m%d")
@@ -160,7 +200,7 @@ def news_agent(ticker: str, raw_news: str) -> str:
 {raw_news}
 
 Please provide a concise and insightful weekly summary of the stock's recent news. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
-    return _openai_chat([{"role": "user", "content": prompt}])
+    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
 
 def technical_agent(ticker: str, tech_text: str) -> str:
     """Prompt 2: Technical Agent (Paper Version)"""
@@ -168,7 +208,7 @@ def technical_agent(ticker: str, tech_text: str) -> str:
 {tech_text}.
 
 Please provide a technical analysis of the stock's recent performance. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
-    return _openai_chat([{"role": "user", "content": prompt}])
+    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
 
 def fundamental_agent(ticker: str, fund_text: str) -> str:
     """Prompt 3: Fundamental Agent (Paper Version)"""
@@ -176,7 +216,7 @@ def fundamental_agent(ticker: str, fund_text: str) -> str:
 {fund_text}.
 
 Please provide a summary of the stock's fundamental trends. You may consider trends in revenue, profit, expenses, margins, cash flow, and balance sheet strength, as well as any notable improvements or warning signs."""
-    return _openai_chat([{"role": "user", "content": prompt}])
+    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
 
 def score_agent(ticker: str, news_summ: str, fund_summ: str, tech_anal: str) -> Dict[str, Any]:
     """Prompt 4: Score Agent (Paper Version)"""
@@ -205,7 +245,7 @@ Return ONLY JSON format:
   "justifications": {{ ... }}
 }}"""
     try:
-        res = _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
+        res = _extract_json(_llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL))
         res['scores'] = _normalize_scores(res.get('scores', {}))
         return res
     except:
@@ -232,7 +272,7 @@ Your task is to analyze the past performance of different strategies and provide
   • If recent strategies have generally underperformed, consider generating a focused strategy that emphasizes only one specific aspect, such as news sentiment, fundamentals, or technical indicators.
 
 Please provide a concise and professional strategy description."""
-    return _openai_chat([{"role": "user", "content": prompt}], temperature=0.5)
+    return _llm_chat([{"role": "user", "content": prompt}], model=PRO_MODEL, temperature=0.5)
 
 def selection_agent(strategy: str, candidates: List[Dict]) -> Dict[str, Any]:
     """Prompt 5: Selector Agent (Paper Version)"""
@@ -260,7 +300,7 @@ Output Guidelines:
 }}
 ```"""
     try:
-        return _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
+        return _extract_json(_llm_chat([{"role": "user", "content": prompt}], model=PRO_MODEL))
     except:
         return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in candidates[:5]]}
 
@@ -297,7 +337,9 @@ def main():
         res = score_agent(t, n, f, te)
         return t, {"ticker": t, "name": stock.get_market_ticker_name(t.split('.')[0]), "scores": res['scores'], "data": {"price": raw['price']}}
 
-    with ThreadPoolExecutor(max_workers=5) as ex:
+    # 병렬 처리 제어 (Gemini의 경우 Rate Limit 방지를 위해 worker 수 조정)
+    workers = 1 if LLM_PROVIDER == "gemini" else 5
+    with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [ex.submit(process, t) for t in universe]
         for fut in as_completed(futures):
             r = fut.result()
