@@ -258,23 +258,70 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
 
     return {**tech_data, **fundamental, **investor, "news_contexts": news_contexts}
 
-def scoring_agent(ticker: str, data: Dict[str, Any]) -> Dict[str, int]:
-    """LLM이 고도화된 데이터와 뉴스 요약을 보고 6개 차원에 대해 점수 산출 (1-10)"""
-    if LLM_DISABLED or not data:
-        return {d: 5 for d in SCORING_DIMENSIONS}
-        
-    prompt = f"""Analyze {ticker} with following multidimensional data:
-[Technical] Price: {data['price']}, Weekly: {data['weekly_return']}%, 1m Mom: {data['momentum']['1m']}%, 3m Mom: {data['momentum']['3m']}%
-[MA & RSI] Status: {data['ma_status']}, Gap5: {data['ma_gaps']['ma5']}%, Gap20: {data['ma_gaps']['ma20']}%, RSI: {data['rsi']}
-[Fundamental] PER: {data['per']}, PBR: {data['pbr']}, Div Yield: {data['div_yield']}%
-[Investor] Foreign Net: {data['foreign']}, Institution Net: {data['institution']} (Last 5 days)
-[News Summaries]
-{chr(10).join(data['news_contexts'])}
+# --- Multi-Agent Analysis Modules (Based on Paper Prompts) ---
 
-Assign scores (1-10) for: {SCORING_DIMENSIONS}
-Focus on 'News Sentiment' and 'News Impact' based on the body snippets provided.
+def news_agent(ticker: str, news_contexts: List[str]) -> str:
+    """Prompt 1: News Agent - Summarizes recent news."""
+    if not news_contexts: return "No recent news available."
+    
+    raw_news_text = "\n".join(news_contexts)
+    prompt = f"""You are a financial news analysis agent. Your task is to filter and summarize recent news related to the stock {ticker}.
+The news content below includes summaries or full articles from the past week:
+{raw_news_text}
+
+Please provide a concise and insightful weekly summary of the stock's recent news. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
+    
+    try:
+        return _openai_chat([{"role": "user", "content": prompt}])
+    except: return "Summary unavailable."
+
+def technical_agent(ticker: str, tech_data: Dict[str, Any]) -> str:
+    """Prompt 2: Technical Agent - Analyzes technical indicators and prices."""
+    prompt = f"""You are a stock price analysis agent. Your task is to analyze the recent technical indicators and price data of the stock {ticker}.
+Below is the stock's daily technical indicator and prices from the past 4 weeks:
+{tech_data}
+
+Please provide a technical analysis of the stock's recent performance. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
+    
+    try:
+        return _openai_chat([{"role": "user", "content": prompt}])
+    except: return "Technical analysis unavailable."
+
+def fundamental_agent(ticker: str, fundamental_data: Dict[str, Any]) -> str:
+    """Prompt 3: Fundamental Agent - Analyzes financial performance."""
+    prompt = f"""You are a stock fundamentals analysis agent. Your task is to analyze the recent financial performance of the stock {ticker} based on its past 4 quarterly reports.
+Below is the stock's recent financial data:
+{fundamental_data}
+
+Please provide a summary of the stock's fundamental trends. You may consider trends in revenue, profit, expenses, margins, cash flow, and balance sheet strength, as well as any notable improvements or warning signs."""
+    
+    try:
+        return _openai_chat([{"role": "user", "content": prompt}])
+    except: return "Fundamental summary unavailable."
+
+def scoring_agent(ticker: str, news_summary: str, fundamental_summary: str, technical_analysis: str) -> Dict[str, int]:
+    """Prompt 4: Score Agent - Evaluates the stock along six dimensions."""
+    prompt = f"""You are an expert stock evaluation assistant. Tasked with assessing each stock using three input types: News summary, Fundamental analysis, and Recent price behavior.
+
+From these inputs, evaluate the stock along six scoring dimensions. For each dimension: provide a score from 1 to 10, and give a brief justification (1-2 short sentences max).
+
+Use only the information provided below. If anything is missing, score conservatively and state that in the reason.
+
+**stock**: {ticker}
+**News Summary**: {news_summary}
+**Fundamental Analysis**: {fundamental_summary}
+**Price and Technical Analysis**: {technical_analysis}
+
+**Scoring Dimensions** (1-10):
+1. Financial Health – based on profitability, debt, cash flow, etc.
+2. Growth Potential– based on investment plans, innovation, and expansion prospects.
+3. News Sentiment – overall tone of the news.
+4. News Impact – the breadth and duration of news influence.
+5. Price Momentum – recent trends, strength, and consistency.
+6. Volatility Risk – recent price stability or instability (higher = more risk)
+
 Return ONLY JSON format:
-{{"scores": {{"dim_name": score, ...}}, "rationale": "one sentence summary"}}"""
+{{"scores": {{"financial_health": score, "growth_potential": score, "news_sentiment": score, "news_impact": score, "price_momentum": score, "volatility_risk": score}}, "justifications": {{"dimension_name": "justification text"}}}}"""
 
     try:
         res = _openai_chat([{"role": "user", "content": prompt}])
@@ -359,10 +406,24 @@ def main():
     universe_tickers = get_stock_universe()
     scored_universe = []
     for ticker in universe_tickers:
-        print(f"Scoring {ticker}...", end='\r')
+        print(f"Analyzing {ticker}...", end='\r')
         data = _get_stock_data(ticker)
         if not data: continue
-        scores = scoring_agent(ticker, data)
+        
+        # Multi-Agent 분석 (논문 Figure 2 & 3 반영)
+        news_summ = news_agent(ticker, data.get('news_contexts', []))
+        tech_anal = technical_agent(ticker, {
+            "price": data['price'], "weekly_return": data['weekly_return'], 
+            "momentum": data['momentum'], "ma_gaps": data['ma_gaps'], "rsi": data['rsi']
+        })
+        fund_summ = fundamental_agent(ticker, {
+            "per": data['per'], "pbr": data['pbr'], "div_yield": data['div_yield'],
+            "investor_trend": {"foreign": data['foreign'], "institution": data['institution']}
+        })
+        
+        # 최종 Scoring
+        scores = scoring_agent(ticker, news_summ, fund_summ, tech_anal)
+        
         scored_universe.append({
             "ticker": ticker,
             "name": stock.get_market_ticker_name(ticker.split('.')[0]),
