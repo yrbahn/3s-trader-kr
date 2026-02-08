@@ -26,9 +26,8 @@ OPENAI_LITE_MODEL = "gpt-4o-mini" # Prompt 1-4용
 OPENAI_PRO_MODEL = "gpt-4o"      # Prompt 5-6용
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-# 모델 매핑 (사용자 요청 반영: 2.5 Flash-Lite & 3 Pro Preview)
-GEMINI_LITE_MODEL = "gemini-2.5-flash-lite"    # Prompt 1-4용
-GEMINI_PRO_MODEL = "gemini-3-pro-preview"      # Prompt 5-6용
+GEMINI_LITE_MODEL = "gemini-2.0-flash-lite-preview-02-05" # Prompt 1-4용
+GEMINI_PRO_MODEL = "gemini-2.0-flash" # Prompt 5-6용 (Pro 대체)
 
 # Global Model Assignment based on Provider
 if LLM_PROVIDER == "gemini":
@@ -41,7 +40,7 @@ else:
 LLM_DISABLED = os.getenv("LLM_DISABLED", "0").strip() == "1"
 
 MAX_PORTFOLIO_STOCKS = 5
-TRAJECTORY_K = 10 
+TRAJECTORY_K = 30 # 성과 추적을 위해 보관 기간 연장
 
 SCORING_DIMENSIONS = [
     "financial_health",
@@ -56,7 +55,6 @@ SCORING_DIMENSIONS = [
 
 def _extract_json(text: str) -> Any:
     text = text.strip()
-    # 마크다운 블록 제거 로직 추가
     if text.startswith("```"):
         text = re.sub(r"^```json\s*", "", text)
         text = re.sub(r"```$", "", text)
@@ -65,25 +63,17 @@ def _extract_json(text: str) -> Any:
     raise ValueError("No JSON found")
 
 def _llm_chat(messages: List[Dict[str, str]], model: str = None, temperature=0.2) -> str:
-    # Use direct env check for robustness inside function
     if os.getenv("LLM_DISABLED", "0").strip() == "1": return "{}"
-    
-    # Use LITE_MODEL as default if not specified
     target_model = model if model else LITE_MODEL
-    
     if LLM_PROVIDER == "gemini":
         if not GEMINI_API_KEY: return "{}"
         prompt = "\n".join([m['content'] for m in messages])
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": temperature}
-        }
+        payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": temperature}}
         res = requests.post(url, json=payload, timeout=60)
         res.raise_for_status()
         return res.json()["candidates"][0]["content"]["parts"][0]["text"]
     else:
-        # OpenAI
         if not OPENAI_API_KEY: return "{}"
         url = "https://api.openai.com/v1/chat/completions"
         headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
@@ -101,17 +91,13 @@ def get_latest_trading_day():
     except: return today
 
 def get_stock_universe(limit=30) -> List[str]:
-    """코스닥 시총 상위 limit개 종목을 가져옵니다."""
     try:
-        print(f"코스닥 시총 상위 {limit}개 종목 수집 중...")
         df_kq = fdr.StockListing('KOSDAQ')
         df_kq = df_kq.sort_values(by='Marcap', ascending=False).head(limit)
         return [f"{c}.KQ" for c in df_kq['Code'].tolist()]
-    except Exception as e:
-        print(f"Universe 수집 오류: {e}")
-        return ["247540.KQ", "086520.KQ"]
+    except: return ["247540.KQ", "086520.KQ"]
 
-# --- Checkpoint System ---
+# --- Checkpoint & Performance Systems ---
 
 def load_cache(today_str: str) -> Dict[str, Any]:
     if os.path.exists(ANALYSIS_CACHE_PATH):
@@ -126,26 +112,64 @@ def save_cache(today_str: str, results: Dict[str, Any]):
     json.dump({"date": today_str, "results": results}, open(ANALYSIS_CACHE_PATH, 'w'), ensure_ascii=False, indent=2)
 
 def _normalize_scores(raw_scores: Dict[str, Any]) -> Dict[str, int]:
-    """LLM 응답 점수를 정규화합니다 (NaN 방지)."""
     normalized = {d: 5 for d in SCORING_DIMENSIONS}
     mapping = {
-        "financial_health": ["financial_health", "financial", "profitability", "valuation", "fundamental_strength"],
-        "growth_potential": ["growth_potential", "growth", "potential", "growth_prospects"],
-        "news_sentiment": ["news_sentiment", "sentiment", "market_sentiment", "overall_tone"],
-        "news_impact": ["news_impact", "impact", "influence", "news_influence"],
-        "price_momentum": ["price_momentum", "momentum", "technical", "trend", "price_momentum"],
-        "volatility_risk": ["volatility_risk", "volatility", "risk", "stability", "risk_level"]
+        "financial_health": ["financial_health", "financial", "profitability", "valuation"],
+        "growth_potential": ["growth_potential", "growth", "potential"],
+        "news_sentiment": ["news_sentiment", "sentiment", "market_sentiment"],
+        "news_impact": ["news_impact", "impact", "influence"],
+        "price_momentum": ["price_momentum", "momentum", "technical"],
+        "volatility_risk": ["volatility_risk", "volatility", "risk", "stability"]
     }
     for target, syns in mapping.items():
         for s in syns:
             if s in raw_scores:
                 try: 
                     val = raw_scores[s]
-                    if isinstance(val, (int, float)):
-                        normalized[target] = int(val)
-                        break
+                    if isinstance(val, (int, float)): normalized[target] = int(val); break
                 except: pass
     return normalized
+
+def calculate_performance(trajectory: List[Dict]) -> List[Dict]:
+    """과거 추천 종목들의 현재 수익률을 실시간 업데이트합니다."""
+    if not trajectory: return []
+    print("과거 추천주 실시간 성과 추적 중...")
+    all_tickers = set()
+    for entry in trajectory:
+        selected = entry.get("selected", [])
+        if isinstance(selected, list):
+            for s in selected:
+                if isinstance(s, dict) and s.get("stock_code"):
+                    all_tickers.add(s["stock_code"])
+                elif isinstance(s, str): # 예외 처리: 문자열인 경우
+                    all_tickers.add(s)
+    
+    if not all_tickers: return trajectory
+
+    current_prices = {}
+    try:
+        data = yf.download(list(all_tickers), period="1d", progress=False)
+        for t in all_tickers:
+            try:
+                price_val = data['Close'][t].iloc[-1]
+                current_prices[t] = float(price_val.iloc[0]) if hasattr(price_val, 'iloc') else float(price_val)
+            except: continue
+    except: pass
+
+    for entry in trajectory:
+        total_ret = 0.0; total_weight = 0.0
+        selected = entry.get("selected", [])
+        if not isinstance(selected, list): continue
+        
+        for s in selected:
+            if not isinstance(s, dict): continue
+            code = s.get("stock_code"); buy_price = s.get("buy_price"); weight = s.get("weight", 1) # 기본 비중 1
+            if code in current_prices and buy_price and buy_price > 0:
+                ret = ((current_prices[code] / buy_price) - 1) * 100
+                s["current_price"] = int(current_prices[code]); s["return"] = round(ret, 2)
+                total_ret += ret * weight; total_weight += weight
+        entry["perf"] = round(total_ret / total_weight, 2) if total_weight > 0 else 0.0
+    return trajectory
 
 # --- Core Data Fetcher ---
 
@@ -154,21 +178,16 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
     try:
         df = yf.download(ticker, period="6mo", interval="1d", progress=False)
         if df.empty: return {}
-        
         def safe_get(series, idx=-1):
             val = series.iloc[idx]
             return float(val.iloc[0]) if hasattr(val, 'iloc') else float(val)
-
         last_close = safe_get(df['Close'])
-        prev_close = safe_get(df['Close'], -6)
-        weekly_return = round(((last_close / prev_close) - 1) * 100, 2)
+        weekly_return = round(((last_close / safe_get(df['Close'], -6)) - 1) * 100, 2)
         vol_series = df['Close'].pct_change().tail(20).std()
         volatility = round(float(vol_series.iloc[0] if hasattr(vol_series, 'iloc') else vol_series) * 100, 2)
-        
         ma5 = safe_get(df['Close'].rolling(window=5).mean())
         ma20 = safe_get(df['Close'].rolling(window=20).mean())
         ma60 = safe_get(df['Close'].rolling(window=60).mean())
-        
         tech_summary = f"Price: {int(last_close)}, Weekly: {weekly_return}%, Vol: {volatility}%, MA: {'Bullish' if ma5>ma20>ma60 else 'Neutral'}, Gaps: MA5:{round(((last_close/ma5)-1)*100,2)}%, MA20:{round(((last_close/ma20)-1)*100,2)}%"
         
         # Fundamental (Naver)
@@ -193,117 +212,37 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         return {"tech_text": tech_summary, "fund_text": f"Fund: {fund_data}, Investor: F:{f_sum}, I:{i_sum}", "news_text": "\n".join(news_contexts), "price": int(last_close)}
     except: return {}
 
-# --- Multi-Agent Pipeline (Prompts 1-6) ---
+# --- Multi-Agent Pipeline ---
 
-def news_agent(ticker: str, raw_news: str) -> str:
-    """Prompt 1: News Agent (Paper Version)"""
-    prompt = f"""You are a financial news analysis agent. Your task is to filter and summarize recent news related to the stock {ticker}. The news content below includes summaries or full articles from the past week:
-{raw_news}
+def news_agent(t, raw):
+    p = f"You are a financial news analysis agent. Task: Summarize recent news for {t}.\nContent: {raw}\nProvide a concise weekly summary."
+    return _llm_chat([{"role": "user", "content": p}], model=LITE_MODEL)
 
-Please provide a concise and insightful weekly summary of the stock's recent news. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
-    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
+def technical_agent(t, raw):
+    p = f"You are a stock price analysis agent. Task: Analyze technical indicators for {t}.\nData: {raw}\nProvide a technical analysis summary."
+    return _llm_chat([{"role": "user", "content": p}], model=LITE_MODEL)
 
-def technical_agent(ticker: str, tech_text: str) -> str:
-    """Prompt 2: Technical Agent (Paper Version)"""
-    prompt = f"""You are a stock price analysis agent. Your task is to analyze the recent technical indicators and price data of the stock {ticker}. Below is the stock's daily technical indicator and prices from the past 4 weeks:
-{tech_text}.
+def fundamental_agent(t, raw):
+    p = f"You are a stock fundamentals analysis agent. Task: Analyze financial performance for {t}.\nData: {raw}\nProvide a summary of fundamental trends."
+    return _llm_chat([{"role": "user", "content": p}], model=LITE_MODEL)
 
-Please provide a technical analysis of the stock's recent performance. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
-    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
-
-def fundamental_agent(ticker: str, fund_text: str) -> str:
-    """Prompt 3: Fundamental Agent (Paper Version)"""
-    prompt = f"""You are a stock fundamentals analysis agent. Your task is to analyze the recent financial performance of the stock {ticker} based on its past 4 quarterly reports. Below is the stock's recent financial data, including 4 quarters of: Income statements, Balance sheets, Cash flow statements.
-{fund_text}.
-
-Please provide a summary of the stock's fundamental trends. You may consider trends in revenue, profit, expenses, margins, cash flow, and balance sheet strength, as well as any notable improvements or warning signs."""
-    return _llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL)
-
-def score_agent(ticker: str, news_summ: str, fund_summ: str, tech_anal: str) -> Dict[str, Any]:
-    """Prompt 4: Score Agent (Paper Version)"""
-    prompt = f"""You are an expert stock evaluation assistant. Tasked with assessing each stock using three input types: News summary, Fundamental analysis, and Recent price behavior.
-
-From these inputs, evaluate the stock along six scoring dimensions. For each dimension: provide a score from 1 to 10, and give a brief justification (1-2 short sentences max).
-
-Use only the information provided below. If anything is missing, score conservatively and state that in the reason.
-
-**stock**: {ticker}
-**News Summary**: {news_summ}
-**Fundamental Analysis**: {fund_summ}
-**Price and Technical Analysis**: {tech_anal}
-
-**Scoring Dimensions** (1-10):
-1. financial_health – based on profitability, debt, cash flow, etc.
-2. growth_potential – based on investment plans, innovation, and expansion prospects.
-3. news_sentiment – overall tone of the news.
-4. news_impact – the breadth and duration of news influence.
-5. price_momentum – recent trends, strength, and consistency.
-6. volatility_risk – recent price stability or instability (higher score = more STABLE/LESS risk)
-
-Return ONLY JSON format:
-{{
-  "scores": {{ "financial_health": X, "growth_potential": X, "news_sentiment": X, "news_impact": X, "price_momentum": X, "volatility_risk": X }},
-  "justifications": {{ ... }}
-}}"""
+def score_agent(t, n, f, te):
+    p = f"Expert evaluator. Stock: {t}\nNews: {n}\nFund: {f}\nTech: {te}\nScore exactly 6 dimensions (1-10): financial_health, growth_potential, news_sentiment, news_impact, price_momentum, volatility_risk.\nReturn ONLY JSON with 'scores' and 'justifications'."
     try:
-        res = _extract_json(_llm_chat([{"role": "user", "content": prompt}], model=LITE_MODEL))
+        res = _extract_json(_llm_chat([{"role": "user", "content": p}], model=LITE_MODEL))
         res['scores'] = _normalize_scores(res.get('scores', {}))
         return res
-    except:
-        return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
+    except: return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
 
-def strategy_agent(trajectory: List[Dict], market_overview: str) -> str:
-    """Prompt 6: Strategy Agent (Paper Version)"""
-    history_text = json.dumps(trajectory[-5:], ensure_ascii=False, indent=2)
-    prompt = f"""You are a strategic investment advisor tasked with refining portfolio strategy based on historical performance and current market signals. Your inputs include:
+def strategy_agent(traj, overview):
+    p = f"Strategic Advisor. History: {traj}\nMarket: {overview}\nTask: Define refined data-driven strategy. Return concise professional text."
+    return _llm_chat([{"role": "user", "content": p}], model=PRO_MODEL, temperature=0.5)
 
-1. Recent Strategy History:
-{history_text}
-(A list of previous portfolio strategies, their observed returns, and the average return of the candidate stock universe. This provides insight into how each strategy performed relative to the broader market.)
-
-2. Current Market Signals:
-{market_overview}
-
-Your task is to analyze the past performance of different strategies and provide a **refined, data-driven strategy recommendation** for the upcoming week.
-
-- You may consider the following:
-  • Examine whether high- or low-return stocks from previous sessions share common characteristics in the score report.
-  • Analyze whether any past strategies consistently yielded high or low returns.
-  • If the current strategy has shown stable outperformance over time, it is reasonable to maintain it.
-  • If recent strategies have generally underperformed, consider generating a focused strategy that emphasizes only one specific aspect, such as news sentiment, fundamentals, or technical indicators.
-
-Please provide a concise and professional strategy description."""
-    return _llm_chat([{"role": "user", "content": prompt}], model=PRO_MODEL, temperature=0.5)
-
-def selection_agent(strategy: str, candidates: List[Dict]) -> Dict[str, Any]:
-    """Prompt 5: Selector Agent (Paper Version)"""
-    scoring_reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in candidates])
-    prompt = f"""As an experienced stock-picking expert, your task is to construct a prudent and strategically aligned portfolio for the next holding period. You are provided with two sources of information:
-
-1. Score reports for various stocks. Each report includes metrics insights from technical indicators, fundamentals, and market news:
-{scoring_reports}
-
-2. A recommended strategy for the upcoming period. This strategy reflects recent performance trends and current market conditions:
-{strategy}
-
-Using these inputs, select the most suitable stocks that align well with the recommended strategy. You may: Choose **up to 5 stocks** (including none, if no stock fits the criteria). Allocate a total portfolio weight of less than 100% if you believe partial investment is more appropriate.
-
-Output Guidelines:
-- A step-by-step reasoning process showing how you evaluated and compared the candidates.
-- Return your result strictly in this JSON format:
-```json
-{{
-  "selected_stocks": [
-    {{"stock_code": "TICKER1", "weight": 25}},
-    {{"stock_code": "TICKER2", "weight": 20}}
-  ],
-  "reasoning": "Explanation of how the strategy was interpreted, and why each stock and weight was chosen."
-}}
-```"""
-    try:
-        return _extract_json(_llm_chat([{"role": "user", "content": prompt}], model=PRO_MODEL))
-    except:
-        return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in candidates[:5]]}
+def selection_agent(strat, cand):
+    reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in cand])
+    p = f"Expert stock-picker. Strategy: {strat}\n\nCandidates:\n{reports}\n\nSelect top {MAX_PORTFOLIO_STOCKS}. Return ONLY JSON with 'selected_stocks' (list of {{stock_code, weight}}) and 'reasoning'."
+    try: return _extract_json(_llm_chat([{"role": "user", "content": p}], model=PRO_MODEL))
+    except: return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in cand[:5]]}
 
 def get_market_overview() -> str:
     try:
@@ -314,12 +253,9 @@ def get_market_overview() -> str:
     except: return "Stable market."
 
 def main():
-    print("3S-Trader KR: Perfect 4-Stage Multi-Agent Mode (Top 30)")
+    print("3S-Trader KR: Performance Tracking Mode Starting...")
     today_str = datetime.now().strftime('%Y-%m-%d')
-    
-    # 캐시 완전 초기화 (새 시작)
-    if os.path.exists(ANALYSIS_CACHE_PATH): os.remove(ANALYSIS_CACHE_PATH)
-    cache = {}
+    cache = load_cache(today_str)
     
     market_overview = get_market_overview()
     trajectory = []
@@ -329,71 +265,69 @@ def main():
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy: {current_strategy[:50]}...")
 
-    universe = get_stock_universe(limit=200)
+    universe = get_stock_universe(limit=200) # 분석 대상을 늘리되 캐시 활용
+    to_do = [t for t in universe if t not in cache]
     
     def process(t):
         raw = _get_stock_data(t)
         if not raw: return None
         n, te, f = news_agent(t, raw['news_text']), technical_agent(t, raw['tech_text']), fundamental_agent(t, raw['fund_text'])
         res = score_agent(t, n, f, te)
-        scores = res.get('scores', {})
-        
-        # 중간 결과 출력 (확인용)
-        print(f"\n[Analysis: {t}] Scores: {scores}")
-        if 'justifications' in res:
-            keys = list(res['justifications'].keys())
-            if keys:
-                print(f" - Reasoning: {res['justifications'][keys[0]]}")
-            
-        return t, {
-            "ticker": t, 
-            "name": stock.get_market_ticker_name(t.split('.')[0]), 
-            "scores": scores,
-            "summaries": {"news": n, "technical": te, "fundamental": f},
-            "justifications": res.get("justifications", {}),
-            "data": {"price": raw['price']}
-        }
+        print(f"[Anal: {t}] Scores: {res['scores']}")
+        return t, {"ticker": t, "name": stock.get_market_ticker_name(t.split('.')[0]), "scores": res['scores'], "data": {"price": raw['price']}}
 
-    # 병렬 처리 제어 (Tier 1 할당량에 맞춰 worker 수 대폭 상향)
-    workers = 15 if LLM_PROVIDER == "gemini" else 5
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futures = [ex.submit(process, t) for t in universe]
-        for fut in as_completed(futures):
-            r = fut.result()
-            if r: 
-                cache[r[0]] = r[1]
-                save_cache(today_str, cache)
-                print(f"Verified & Cached {r[0]}")
+    if to_do:
+        with ThreadPoolExecutor(max_workers=10) as ex:
+            futures = [ex.submit(process, t) for t in to_do]
+            for fut in as_completed(futures):
+                r = fut.result()
+                if r: cache[r[0]] = r[1]; save_cache(today_str, cache)
 
-    scored_universe = list(cache.values())
+    scored_universe = [cache[t] for t in universe if t in cache]
     scored_sorted = sorted(scored_universe, key=lambda x: sum(x['scores'].values()), reverse=True)
     sel_res = selection_agent(current_strategy, scored_sorted[:30])
     final_stocks = sel_res.get("selected_stocks", [])
-    final_tickers = [str(s.get('stock_code', '')).strip().upper() for s in final_stocks]
+    
+    # 추천 당시 가격 매핑
+    price_map = {s['ticker']: s['data']['price'] for s in scored_universe}
+    for s in final_stocks:
+        s['buy_price'] = price_map.get(str(s.get('stock_code','')), 0)
     
     trajectory.append({"date": today_str, "strategy": current_strategy, "selected": final_stocks, "perf": 0.0})
-    json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'), ensure_ascii=False)
+    trajectory = calculate_performance(trajectory) # 실시간 수익률 업데이트
+    json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'), ensure_ascii=False, indent=2)
 
     filename = f"reports/3S_Trader_Report_{today_str}.md"; os.makedirs("reports", exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
-        f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n## 🎯 2. Selection\n")
+        f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n")
         
-        selected_data = []
-        weight_map = {}
-        for s in final_stocks:
-            code = str(s.get('stock_code', '')).strip().upper()
-            match = next((x for x in scored_universe if x['ticker'].upper() == code), None)
-            if match:
-                selected_data.append(match)
-                weight_map[match['ticker']] = s.get('weight', 0)
+        if len(trajectory) > 1:
+            f.write("## 📈 2. Performance Tracking (과거 추천 성과)\n")
+            perf_list = []
+            for t_entry in reversed(trajectory[:-1]):
+                picks = []
+                selected = t_entry.get('selected', [])
+                if isinstance(selected, list):
+                    for s in selected:
+                        if isinstance(s, dict):
+                            picks.append(f"{s.get('stock_code','')} ({s.get('return',0)}%)")
+                        else:
+                            picks.append(str(s))
+                picks_str = ", ".join(picks)
+                perf_list.append({"추천일": t_entry['date'], "추천종목 (수익률)": picks_str, "평균수익률": f"{t_entry.get('perf', 0)}%"})
+            f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
 
+        f.write(f"## 🎯 3. Selection (Today's TOP 5)\n")
+        selected_tickers = [str(s.get('stock_code','')) for s in final_stocks]
+        selected_data = [s for s in scored_universe if s['ticker'] in selected_tickers]
         if selected_data:
-            df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중(%)": weight_map.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_data])
-            f.write(df.sort_values("비중(%)", ascending=False).to_markdown(index=False))
+            wm = {str(s.get('stock_code','')): s.get('weight', 0) for s in final_stocks}
+            df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중": wm.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_data])
+            f.write(df.sort_values("비중", ascending=False).to_markdown(index=False))
         
-        f.write("\n\n## 📊 3. Scoring Detail\n")
+        f.write("\n\n## 📊 4. Scoring Detail\n")
         f.write(pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], **s['scores']} for s in scored_universe]).to_markdown(index=False))
     
-    print(f"Report complete: {filename}")
+    print(f"Report: {filename}")
 
 if __name__ == "__main__": main()
