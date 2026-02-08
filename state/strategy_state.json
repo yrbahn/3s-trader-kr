@@ -2,35 +2,45 @@
   "trajectory": [
     {
       "date": "2026-02-08",
-      "strategy": "Given a stable market and recent neutral performance, the strategy shifts to **Catalyst-Driven Value**. Focus on undervalued stocks (low P/B, P/E) with upcoming catalysts identified through news sentiment analysis. Target oversold conditions (low RSI) for mean reversion. Enforce strict diversification (max 20% per stock) and require positive net income to mitigate risk. Aims to capitalize on price normalization driven by specific catalysts in fundamentally sound, undervalued assets.\n",
+      "strategy": "Refine the Catalyst-Driven Value strategy by incorporating earnings estimate revisions as a key catalyst indicator. Prioritize stocks with positive earnings revisions alongside low P/B, P/E, and oversold RSI conditions. Maintain strict diversification (max 20% per stock) and positive net income requirement. This enhances the focus on fundamentally improving undervalued assets poised for price normalization.\n",
       "selected": [
         {
-          "stock_code": "동국제약 (086450.KQ)",
+          "stock_code": "420770.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 58500,
+          "current_price": 58500,
+          "return": 0.0
         },
         {
-          "stock_code": "코스메카코리아 (241710.KQ)",
+          "stock_code": "376300.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 89800,
+          "current_price": 41050,
+          "return": -54.29
         },
         {
-          "stock_code": "비츠로셀 (082920.KQ)",
+          "stock_code": "036620.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 53700,
+          "current_price": 6510,
+          "return": -87.88
         },
         {
-          "stock_code": "레이크머티리얼즈 (281740.KQ)",
+          "stock_code": "095340.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 163500,
+          "current_price": 163500,
+          "return": 0.0
         },
         {
-          "stock_code": "테스 (095610.KQ)",
+          "stock_code": "074600.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 29000,
+          "current_price": 29000,
+          "return": 0.0
         }
       ],
-      "perf": 0.0
+      "perf": -28.43
     }
   ]
 }

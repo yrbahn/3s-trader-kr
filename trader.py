@@ -91,6 +91,7 @@ def get_latest_trading_day():
     except: return today
 
 def get_stock_universe(limit=30) -> List[str]:
+    """코스닥 시총 상위 limit개 종목을 가져옵니다."""
     try:
         df_kq = fdr.StockListing('KOSDAQ')
         df_kq = df_kq.sort_values(by='Marcap', ascending=False).head(limit)
@@ -112,14 +113,15 @@ def save_cache(today_str: str, results: Dict[str, Any]):
     json.dump({"date": today_str, "results": results}, open(ANALYSIS_CACHE_PATH, 'w'), ensure_ascii=False, indent=2)
 
 def _normalize_scores(raw_scores: Dict[str, Any]) -> Dict[str, int]:
+    """LLM 응답 점수를 정규화합니다 (NaN 방지)."""
     normalized = {d: 5 for d in SCORING_DIMENSIONS}
     mapping = {
-        "financial_health": ["financial_health", "financial", "profitability", "valuation"],
-        "growth_potential": ["growth_potential", "growth", "potential"],
-        "news_sentiment": ["news_sentiment", "sentiment", "market_sentiment"],
-        "news_impact": ["news_impact", "impact", "influence"],
-        "price_momentum": ["price_momentum", "momentum", "technical"],
-        "volatility_risk": ["volatility_risk", "volatility", "risk", "stability"]
+        "financial_health": ["financial_health", "financial", "profitability", "valuation", "fundamental_strength"],
+        "growth_potential": ["growth_potential", "growth", "potential", "growth_prospects"],
+        "news_sentiment": ["news_sentiment", "sentiment", "market_sentiment", "overall_tone"],
+        "news_impact": ["news_impact", "impact", "influence", "news_influence"],
+        "price_momentum": ["price_momentum", "momentum", "technical", "trend", "price_momentum"],
+        "volatility_risk": ["volatility_risk", "volatility", "risk", "stability", "risk_level"]
     }
     for target, syns in mapping.items():
         for s in syns:
@@ -139,10 +141,11 @@ def calculate_performance(trajectory: List[Dict]) -> List[Dict]:
         selected = entry.get("selected", [])
         if isinstance(selected, list):
             for s in selected:
-                if isinstance(s, dict) and s.get("stock_code"):
-                    all_tickers.add(s["stock_code"])
-                elif isinstance(s, str): # 예외 처리: 문자열인 경우
-                    all_tickers.add(s)
+                code = s.get("stock_code") if isinstance(s, dict) else str(s)
+                # 정규표현식으로 티커(숫자6자리.KQ) 추출
+                match = re.search(r'(\d{6}\.K[SQ])', str(code))
+                if match: all_tickers.add(match.group(1))
+                else: all_tickers.add(str(code))
     
     if not all_tickers: return trajectory
 
@@ -163,7 +166,11 @@ def calculate_performance(trajectory: List[Dict]) -> List[Dict]:
         
         for s in selected:
             if not isinstance(s, dict): continue
-            code = s.get("stock_code"); buy_price = s.get("buy_price"); weight = s.get("weight", 1) # 기본 비중 1
+            raw_code = s.get("stock_code")
+            match = re.search(r'(\d{6}\.K[SQ])', str(raw_code))
+            code = match.group(1) if match else str(raw_code)
+            
+            buy_price = s.get("buy_price"); weight = s.get("weight", 1)
             if code in current_prices and buy_price and buy_price > 0:
                 ret = ((current_prices[code] / buy_price) - 1) * 100
                 s["current_price"] = int(current_prices[code]); s["return"] = round(ret, 2)
@@ -182,7 +189,8 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
             val = series.iloc[idx]
             return float(val.iloc[0]) if hasattr(val, 'iloc') else float(val)
         last_close = safe_get(df['Close'])
-        weekly_return = round(((last_close / safe_get(df['Close'], -6)) - 1) * 100, 2)
+        prev_close = safe_get(df['Close'], -6)
+        weekly_return = round(((last_close / prev_close) - 1) * 100, 2)
         vol_series = df['Close'].pct_change().tail(20).std()
         volatility = round(float(vol_series.iloc[0] if hasattr(vol_series, 'iloc') else vol_series) * 100, 2)
         ma5 = safe_get(df['Close'].rolling(window=5).mean())
@@ -190,7 +198,6 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         ma60 = safe_get(df['Close'].rolling(window=60).mean())
         tech_summary = f"Price: {int(last_close)}, Weekly: {weekly_return}%, Vol: {volatility}%, MA: {'Bullish' if ma5>ma20>ma60 else 'Neutral'}, Gaps: MA5:{round(((last_close/ma5)-1)*100,2)}%, MA20:{round(((last_close/ma20)-1)*100,2)}%"
         
-        # Fundamental (Naver)
         soup_main = BeautifulSoup(requests.get(f"https://finance.naver.com/item/main.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
         def _parse(s, i):
             try: return float(s.find("em", id=i).text.replace(",","").replace("배","").replace("%",""))
@@ -240,7 +247,7 @@ def strategy_agent(traj, overview):
 
 def selection_agent(strat, cand):
     reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in cand])
-    p = f"Expert stock-picker. Strategy: {strat}\n\nCandidates:\n{reports}\n\nSelect top {MAX_PORTFOLIO_STOCKS}. Return ONLY JSON with 'selected_stocks' (list of {{stock_code, weight}}) and 'reasoning'."
+    p = f"""Expert stock-picker. Strategy: {strat}\n\nCandidates:\n{reports}\n\nSelect top {MAX_PORTFOLIO_STOCKS}. Return ONLY JSON with 'selected_stocks' (list of {{stock_code, weight}}) and 'reasoning'."""
     try: return _extract_json(_llm_chat([{"role": "user", "content": p}], model=PRO_MODEL))
     except: return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in cand[:5]]}
 
@@ -253,7 +260,7 @@ def get_market_overview() -> str:
     except: return "Stable market."
 
 def main():
-    print("3S-Trader KR: Performance Tracking Mode Starting...")
+    print("3S-Trader KR: Perfect 4-Stage Multi-Agent Mode (Top 30)")
     today_str = datetime.now().strftime('%Y-%m-%d')
     cache = load_cache(today_str)
     
@@ -293,62 +300,48 @@ def main():
     for s in final_stocks:
         s['buy_price'] = price_map.get(str(s.get('stock_code','')), 0)
     
-    # 4. Save State & Report
-    # 동일 날짜 중복 방지: 이미 오늘 날짜 기록이 있으면 업데이트, 없으면 추가
+    # 동일 날짜 중복 방지
     today_entry = {"date": today_str, "strategy": current_strategy, "selected": final_stocks, "perf": 0.0}
+    found_idx = next((i for i, e in enumerate(trajectory) if e.get("date") == today_str), -1)
+    if found_idx >= 0: trajectory[found_idx] = today_entry
+    else: trajectory.append(today_entry)
     
-    found_idx = -1
-    for i, entry in enumerate(trajectory):
-        if entry.get("date") == today_str:
-            found_idx = i
-            break
-            
-    if found_idx >= 0:
-        trajectory[found_idx] = today_entry
-    else:
-        trajectory.append(today_entry)
-        
-    trajectory = calculate_performance(trajectory) # 실시간 수익률 업데이트
+    trajectory = calculate_performance(trajectory)
     json.dump({"trajectory": trajectory[-TRAJECTORY_K:]}, open(STRATEGY_STATE_PATH, 'w'), ensure_ascii=False, indent=2)
 
     filename = f"reports/3S_Trader_Report_{today_str}.md"; os.makedirs("reports", exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n")
         
-        # 성과 모니터링 섹션 (날짜별 1줄씩만 노출)
         if len(trajectory) > 1:
             f.write("## 📈 2. Performance Tracking (과거 추천 성과)\n")
             perf_list = []
-            # 최신순 정렬 및 오늘 날짜 제외
-            past_entries = [e for e in trajectory if e['date'] != today_str]
-            for t_entry in reversed(past_entries):
+            for t_entry in reversed([e for e in trajectory if e['date'] != today_str]):
                 picks = []
-                selected = t_entry.get('selected', [])
-                if isinstance(selected, list):
-                    for s in selected:
-                        if isinstance(s, dict):
-                            # 종목명(또는 코드) + 수익률
-                            code = s.get('stock_code', 'N/A')
-                            ret = s.get('return', 0)
-                            picks.append(f"{code} ({ret}%)")
-                        else:
-                            picks.append(str(s))
-                
-                perf_list.append({
-                    "추천일": t_entry['date'], 
-                    "추천종목 (현재수익률)": ", ".join(picks[:5]), # 최대 5개만 노출
-                    "평균수익률": f"{t_entry.get('perf', 0)}%"
-                })
-            
-            if perf_list:
-                f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
+                for s in t_entry.get('selected', []):
+                    code = s.get('stock_code', 'N/A')
+                    match = re.search(r'(\d{6}\.K[SQ])', str(code))
+                    clean_code = match.group(1) if match else str(code)
+                    picks.append(f"{clean_code} ({s.get('return', 0)}%)")
+                perf_list.append({"추천일": t_entry['date'], "추천종목 (수익률)": ", ".join(picks[:5]), "평균수익률": f"{t_entry.get('perf', 0)}%"})
+            if perf_list: f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
 
         f.write(f"## 🎯 3. Selection (Today's TOP 5)\n")
-        selected_tickers = [str(s.get('stock_code','')) for s in final_stocks]
-        selected_data = [s for s in scored_universe if s['ticker'] in selected_tickers]
-        if selected_data:
-            wm = {str(s.get('stock_code','')): s.get('weight', 0) for s in final_stocks}
-            df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중": wm.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_data])
+        # 선별된 종목 매칭 (유연한 검색)
+        selected_entries = []
+        weight_map = {}
+        for s in final_stocks:
+            raw_code = str(s.get('stock_code',''))
+            match = re.search(r'(\d{6}\.K[SQ])', raw_code)
+            ticker_to_find = match.group(1) if match else raw_code.strip()
+            entry = next((x for x in scored_universe if x['ticker'].upper() in ticker_to_find.upper() or ticker_to_find.upper() in x['ticker'].upper()), None)
+            if not entry: entry = next((x for x in scored_universe if x['name'].upper() in raw_code.upper()), None)
+            if entry:
+                selected_entries.append(entry)
+                weight_map[entry['ticker']] = s.get('weight', 0)
+
+        if selected_entries:
+            df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중": weight_map.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_entries])
             f.write(df.sort_values("비중", ascending=False).to_markdown(index=False))
         
         f.write("\n\n## 📊 4. Scoring Detail\n")

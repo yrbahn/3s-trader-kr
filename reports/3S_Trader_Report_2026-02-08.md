@@ -1,11 +1,17 @@
 # 3S-Trader KR 전략 리포트 (2026-02-08)
 
 ## 🧠 1. Strategy
-Given a stable market and recent neutral performance, the strategy shifts to **Catalyst-Driven Value**. Focus on undervalued stocks (low P/B, P/E) with upcoming catalysts identified through news sentiment analysis. Target oversold conditions (low RSI) for mean reversion. Enforce strict diversification (max 20% per stock) and require positive net income to mitigate risk. Aims to capitalize on price normalization driven by specific catalysts in fundamentally sound, undervalued assets.
+Refine the Catalyst-Driven Value strategy by incorporating earnings estimate revisions as a key catalyst indicator. Prioritize stocks with positive earnings revisions alongside low P/B, P/E, and oversold RSI conditions. Maintain strict diversification (max 20% per stock) and positive net income requirement. This enhances the focus on fundamentally improving undervalued assets poised for price normalization.
 
 
 ## 🎯 3. Selection (Today's TOP 5)
-
+| 종목명     | 티커        |   비중 |    현재가 |   Total |
+|:--------|:----------|-----:|-------:|--------:|
+| 기가비스    | 420770.KQ |   20 |  58500 |      50 |
+| 디어유     | 376300.KQ |   20 |  89800 |      46 |
+| 감성코퍼레이션 | 036620.KQ |   20 |  53700 |      45 |
+| ISC     | 095340.KQ |   20 | 163500 |      44 |
+| 원익QnC   | 074600.KQ |   20 |  29000 |      44 |
 
 ## 📊 4. Scoring Detail
 | 종목명         | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
