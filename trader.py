@@ -26,8 +26,9 @@ OPENAI_LITE_MODEL = "gpt-4o-mini" # Prompt 1-4용
 OPENAI_PRO_MODEL = "gpt-4o"      # Prompt 5-6용
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_LITE_MODEL = "gemini-2.0-flash-lite-preview-02-05" # Prompt 1-4용
-GEMINI_PRO_MODEL = "gemini-2.0-flash" # Prompt 5-6용 (Pro 대체)
+# 모델 매핑 (사용자 요청 반영: 2.5 Flash-Lite & 3 Pro Preview)
+GEMINI_LITE_MODEL = "gemini-2.5-flash-lite"    # Prompt 1-4용
+GEMINI_PRO_MODEL = "gemini-3-pro-preview"      # Prompt 5-6용
 
 # Global Model Assignment based on Provider
 if LLM_PROVIDER == "gemini":
