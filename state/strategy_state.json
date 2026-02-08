@@ -2,8 +2,13 @@
   "trajectory": [
     {
       "date": "2026-02-08",
-      "strategy": "Incorporate earnings estimate revisions into the Catalyst-Driven Value strategy. Prioritize stocks exhibiting positive earnings revisions alongside low P/B, P/E, and oversold RSI. Maintain diversification (max 20% per stock) and positive net income requirement to focus on fundamentally improving undervalued assets.\n",
+      "strategy": "Refine Catalyst-Driven Value strategy by emphasizing positive earnings revisions alongside low P/B, P/E, and oversold RSI. Maintain diversification (max 20% per stock) and require positive net income. Focus on fundamentally improving undervalued assets exhibiting upward earnings momentum.\n",
       "selected": [
+        {
+          "stock_code": "기가비스 (420770.KQ)",
+          "weight": 20,
+          "buy_price": 0
+        },
         {
           "stock_code": "디어유 (376300.KQ)",
           "weight": 20,
@@ -16,11 +21,6 @@
         },
         {
           "stock_code": "ISC (095340.KQ)",
-          "weight": 20,
-          "buy_price": 0
-        },
-        {
-          "stock_code": "기가비스 (420770.KQ)",
           "weight": 20,
           "buy_price": 0
         },
