@@ -154,35 +154,115 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
 
 # --- Multi-Agent Pipeline (Prompts 1-6) ---
 
-def news_agent(t, raw):
-    p = f"You are a financial news analysis agent. Task: Summarize recent news for {t}.\nContent: {raw}\nProvide a concise weekly summary."
-    return _openai_chat([{"role": "user", "content": p}])
+def news_agent(ticker: str, raw_news: str) -> str:
+    """Prompt 1: News Agent (Paper Version)"""
+    prompt = f"""You are a financial news analysis agent. Your task is to filter and summarize recent news related to the stock {ticker}. The news content below includes summaries or full articles from the past week:
+{raw_news}
 
-def technical_agent(t, raw):
-    p = f"You are a stock price analysis agent. Task: Analyze technical indicators for {t}.\nData: {raw}\nProvide a technical analysis summary."
-    return _openai_chat([{"role": "user", "content": p}])
+Please provide a concise and insightful weekly summary of the stock's recent news. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
+    return _openai_chat([{"role": "user", "content": prompt}])
 
-def fundamental_agent(t, raw):
-    p = f"You are a stock fundamentals analysis agent. Task: Analyze financial performance for {t}.\nData: {raw}\nProvide a summary of fundamental trends."
-    return _openai_chat([{"role": "user", "content": p}])
+def technical_agent(ticker: str, tech_text: str) -> str:
+    """Prompt 2: Technical Agent (Paper Version)"""
+    prompt = f"""You are a stock price analysis agent. Your task is to analyze the recent technical indicators and price data of the stock {ticker}. Below is the stock's daily technical indicator and prices from the past 4 weeks:
+{tech_text}.
 
-def score_agent(t, n, f, te):
-    p = f"Expert evaluator. Stock: {t}\nNews: {n}\nFund: {f}\nTech: {te}\nScore exactly 6 dimensions (1-10): financial_health, growth_potential, news_sentiment, news_impact, price_momentum, volatility_risk.\nReturn ONLY JSON with 'scores' (exact keys) and 'justifications' keys."
+Please provide a technical analysis of the stock's recent performance. Your output will be used to help a downstream stock selection agent make informed weekly investment decisions."""
+    return _openai_chat([{"role": "user", "content": prompt}])
+
+def fundamental_agent(ticker: str, fund_text: str) -> str:
+    """Prompt 3: Fundamental Agent (Paper Version)"""
+    prompt = f"""You are a stock fundamentals analysis agent. Your task is to analyze the recent financial performance of the stock {ticker} based on its past 4 quarterly reports. Below is the stock's recent financial data, including 4 quarters of: Income statements, Balance sheets, Cash flow statements.
+{fund_text}.
+
+Please provide a summary of the stock's fundamental trends. You may consider trends in revenue, profit, expenses, margins, cash flow, and balance sheet strength, as well as any notable improvements or warning signs."""
+    return _openai_chat([{"role": "user", "content": prompt}])
+
+def score_agent(ticker: str, news_summ: str, fund_summ: str, tech_anal: str) -> Dict[str, Any]:
+    """Prompt 4: Score Agent (Paper Version)"""
+    prompt = f"""You are an expert stock evaluation assistant. Tasked with assessing each stock using three input types: News summary, Fundamental analysis, and Recent price behavior.
+
+From these inputs, evaluate the stock along six scoring dimensions. For each dimension: provide a score from 1 to 10, and give a brief justification (1-2 short sentences max).
+
+Use only the information provided below. If anything is missing, score conservatively and state that in the reason.
+
+**stock**: {ticker}
+**News Summary**: {news_summ}
+**Fundamental Analysis**: {fund_summ}
+**Price and Technical Analysis**: {tech_anal}
+
+**Scoring Dimensions** (1-10):
+1. financial_health – based on profitability, debt, cash flow, etc.
+2. growth_potential – based on investment plans, innovation, and expansion prospects.
+3. news_sentiment – overall tone of the news.
+4. news_impact – the breadth and duration of news influence.
+5. price_momentum – recent trends, strength, and consistency.
+6. volatility_risk – recent price stability or instability (higher score = more STABLE/LESS risk)
+
+Return ONLY JSON format:
+{{
+  "scores": {{ "financial_health": X, "growth_potential": X, "news_sentiment": X, "news_impact": X, "price_momentum": X, "volatility_risk": X }},
+  "justifications": {{ ... }}
+}}"""
     try:
-        res = _extract_json(_openai_chat([{"role": "user", "content": p}]))
+        res = _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
         res['scores'] = _normalize_scores(res.get('scores', {}))
         return res
-    except: return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
+    except:
+        return {"scores": {d: 5 for d in SCORING_DIMENSIONS}}
 
-def strategy_agent(traj, overview):
-    p = f"Strategic Advisor. History: {traj}\nMarket: {overview}\nTask: Define refined data-driven strategy for the upcoming week based on history. Return concise professional text."
-    return _openai_chat([{"role": "user", "content": p}], temperature=0.5)
+def strategy_agent(trajectory: List[Dict], market_overview: str) -> str:
+    """Prompt 6: Strategy Agent (Paper Version)"""
+    history_text = json.dumps(trajectory[-5:], ensure_ascii=False, indent=2)
+    prompt = f"""You are a strategic investment advisor tasked with refining portfolio strategy based on historical performance and current market signals. Your inputs include:
 
-def selection_agent(strat, cand):
-    reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in cand])
-    p = f"""Expert stock-picker. Strategy: {strat}\n\nCandidates:\n{reports}\n\nSelect top {MAX_PORTFOLIO_STOCKS}. Return ONLY JSON with 'selected_stocks' (list of {{stock_code, weight}} where stock_code is the ticker) and 'reasoning'."""
-    try: return _extract_json(_openai_chat([{"role": "user", "content": p}]))
-    except: return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in cand[:5]]}
+1. Recent Strategy History:
+{history_text}
+(A list of previous portfolio strategies, their observed returns, and the average return of the candidate stock universe. This provides insight into how each strategy performed relative to the broader market.)
+
+2. Current Market Signals:
+{market_overview}
+
+Your task is to analyze the past performance of different strategies and provide a **refined, data-driven strategy recommendation** for the upcoming week.
+
+- You may consider the following:
+  • Examine whether high- or low-return stocks from previous sessions share common characteristics in the score report.
+  • Analyze whether any past strategies consistently yielded high or low returns.
+  • If the current strategy has shown stable outperformance over time, it is reasonable to maintain it.
+  • If recent strategies have generally underperformed, consider generating a focused strategy that emphasizes only one specific aspect, such as news sentiment, fundamentals, or technical indicators.
+
+Please provide a concise and professional strategy description."""
+    return _openai_chat([{"role": "user", "content": prompt}], temperature=0.5)
+
+def selection_agent(strategy: str, candidates: List[Dict]) -> Dict[str, Any]:
+    """Prompt 5: Selector Agent (Paper Version)"""
+    scoring_reports = "\n".join([f"- {c['name']} ({c['ticker']}): {c['scores']}" for c in candidates])
+    prompt = f"""As an experienced stock-picking expert, your task is to construct a prudent and strategically aligned portfolio for the next holding period. You are provided with two sources of information:
+
+1. Score reports for various stocks. Each report includes metrics insights from technical indicators, fundamentals, and market news:
+{scoring_reports}
+
+2. A recommended strategy for the upcoming period. This strategy reflects recent performance trends and current market conditions:
+{strategy}
+
+Using these inputs, select the most suitable stocks that align well with the recommended strategy. You may: Choose **up to 5 stocks** (including none, if no stock fits the criteria). Allocate a total portfolio weight of less than 100% if you believe partial investment is more appropriate.
+
+Output Guidelines:
+- A step-by-step reasoning process showing how you evaluated and compared the candidates.
+- Return your result strictly in this JSON format:
+```json
+{{
+  "selected_stocks": [
+    {{"stock_code": "TICKER1", "weight": 25}},
+    {{"stock_code": "TICKER2", "weight": 20}}
+  ],
+  "reasoning": "Explanation of how the strategy was interpreted, and why each stock and weight was chosen."
+}}
+```"""
+    try:
+        return _extract_json(_openai_chat([{"role": "user", "content": prompt}]))
+    except:
+        return {"selected_stocks": [{"stock_code": c['ticker'], "weight": 20} for c in candidates[:5]]}
 
 def get_market_overview() -> str:
     try:

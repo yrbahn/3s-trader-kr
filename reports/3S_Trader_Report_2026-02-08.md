@@ -1,106 +1,59 @@
 # 3S-Trader KR 전략 리포트 (2026-02-08)
 
 ## 🧠 1. Strategy
-**Selection Strategy:**
+**Refined Data-Driven Strategy for the Upcoming Week:**
 
-In the current stable market, the stock selection strategy should focus on the following prioritized dimensions to enhance growth potential while maintaining stability:
+In the current stable market environment, our refined stock selection strategy will focus on optimizing growth potential and maintaining portfolio resilience by leveraging insights from historical performance and current market signals. The emphasis will be on the following dimensions:
 
-1. **Financial Health**: Prioritize stocks with strong balance sheets and healthy cash flows to ensure financial stability and reduce the risk of distress in any market condition.
+1. **Financial Health**: Given the consistent prioritization of financial health across all past strategies, we will continue to focus on stocks with robust balance sheets and healthy cash flows. This ensures financial stability and minimizes risk across varying market conditions. Companies with low debt-to-equity ratios and strong liquidity will be prioritized.
 
-2. **Growth Potential**: Identify companies with robust growth prospects, particularly those offering innovative products or services that can capture and expand market share.
+2. **Growth Potential**: Historical analysis indicates that companies with innovative products or services consistently offer strong growth prospects. We will target sectors known for consistent innovation and demand, such as technology and healthcare, while ensuring these companies have a track record of revenue growth and market expansion.
 
-3. **Volatility Management**: While the market is stable, continue to manage exposure to high-volatility stocks to maintain portfolio stability and mitigate potential risks.
+3. **Volatility Management**: While the market is stable, maintaining a balanced exposure to volatility is crucial. We will select stocks with moderate volatility to sustain portfolio stability and mitigate potential risks. This involves adjusting weights to ensure no single stock significantly influences overall portfolio risk.
 
-4. **News Sentiment and Impact**: Monitor news sentiment and its potential impact on stock prices to identify opportunities and risks that may not be immediately apparent in financial metrics.
+4. **News Sentiment and Impact**: Recent strategies have highlighted the importance of incorporating news sentiment analysis. We will actively monitor news sentiment using advanced data analytics to identify emerging opportunities and risks. This allows for timely adjustments to the portfolio based on the potential impact of news on stock prices.
 
-By emphasizing these dimensions, the strategy aims to construct a resilient portfolio capable of capitalizing on growth opportunities while safeguarding against unforeseen market fluctuations.
+By applying these data-driven insights, the strategy aims to construct a resilient portfolio that capitalizes on growth opportunities while safeguarding against unforeseen market fluctuations. The focus will be on maintaining a diversified portfolio with a balance of stability and growth, ensuring adaptability to any shifts in market conditions.
 
 ## 🎯 2. Selection
-| 종목명      | 티커        |    현재가 |   Total점수 |
-|:---------|:----------|-------:|----------:|
-| ISC      | 095340.KQ | 163500 |        42 |
-| 티씨케이     | 064760.KQ |  75500 |        42 |
-| 비에이치아이   | 083650.KQ |  75500 |        42 |
-| HK이노엔    | 195940.KQ |  21200 |        41 |
-| 피에스케이홀딩스 | 031980.KQ |  69200 |        39 |
+| 종목명    | 티커        |   비중(%) |    현재가 |   Total |
+|:-------|:----------|--------:|-------:|--------:|
+| ISC    | 095340.KQ |      20 | 163500 |      47 |
+| 에임드바이오 | 0009K0.KQ |      20 |  77500 |      39 |
+| 솔브레인   | 357780.KQ |      20 | 407000 |      39 |
+| 셀트리온제약 | 068760.KQ |      20 |  68100 |      39 |
+| 휴젤     | 145020.KQ |      20 | 243500 |      37 |
 
 ## 📊 3. Scoring Detail
-| 종목명       | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
-|:----------|:----------|-------------------:|-------------------:|-----------------:|--------------:|-----------------:|------------------:|
-| 에코프로      | 086520.KQ |                  4 |                  6 |                6 |             7 |                8 |                 3 |
-| 리노공업      | 058470.KQ |                  4 |                  6 |                5 |             6 |                7 |                 4 |
-| 레인보우로보틱스  | 277810.KQ |                  3 |                  4 |                4 |             6 |                3 |                 2 |
-| 이오테크닉스    | 039030.KQ |                  4 |                  4 |                3 |             4 |                3 |                 6 |
-| 리가켐바이오    | 141080.KQ |                  3 |                  4 |                4 |             3 |                7 |                 3 |
-| 원익IPS     | 240810.KQ |                  4 |                  5 |                3 |             4 |                3 |                 6 |
-| 보로노이      | 310210.KQ |                  3 |                  4 |                3 |             4 |                3 |                 6 |
-| 삼천당제약     | 000250.KQ |                  3 |                  4 |                4 |             3 |                3 |                 6 |
-| 로보티즈      | 108490.KQ |                  3 |                  6 |                4 |             5 |                7 |                 4 |
-| 메지온       | 140410.KQ |                  3 |                  4 |                4 |             5 |                6 |                 3 |
-| HPSP      | 403870.KQ |                  4 |                  6 |                4 |             5 |                6 |                 3 |
-| ISC       | 095340.KQ |                  6 |                  8 |                7 |             8 |                9 |                 4 |
-| 현대무벡스     | 319400.KQ |                  4 |                  6 |                4 |             5 |                7 |                 3 |
-| 솔브레인      | 357780.KQ |                  6 |                  7 |                6 |             7 |                8 |                 4 |
-| 에스티팜      | 237690.KQ |                  4 |                  6 |                4 |             5 |                6 |                 4 |
-| 펄어비스      | 263750.KQ |                  4 |                  6 |                5 |             4 |                7 |                 3 |
-| 원익홀딩스     | 030530.KQ |                  4 |                  6 |                4 |             6 |                7 |                 3 |
-| 에스피지      | 058610.KQ |                  4 |                  7 |                8 |             7 |                8 |                 4 |
-| 동진쎄미켐     | 005290.KQ |                  6 |                  7 |                6 |             7 |                6 |                 5 |
-| 셀트리온제약    | 068760.KQ |                  4 |                  7 |                6 |             7 |                6 |                 4 |
-| 실리콘투      | 257720.KQ |                  5 |                  6 |                6 |             5 |                7 |                 4 |
-| 티씨케이      | 064760.KQ |                  6 |                  8 |                8 |             7 |                9 |                 4 |
-| 에스엠       | 041510.KQ |                  6 |                  7 |                6 |             7 |                4 |                 5 |
-| 비에이치아이    | 083650.KQ |                  6 |                  8 |                7 |             8 |                9 |                 4 |
-| 유진테크      | 084370.KQ |                  4 |                  6 |                6 |             5 |                7 |                 4 |
-| 오름테라퓨틱    | 475830.KQ |                  4 |                  7 |                7 |             6 |                8 |                 3 |
-| 고영        | 098460.KQ |                  4 |                  8 |                7 |             8 |                7 |                 4 |
-| 태성        | 323280.KQ |                  4 |                  7 |                8 |             7 |                6 |                 4 |
-| 주성엔지니어링   | 036930.KQ |                  4 |                  6 |                4 |             6 |                3 |                 5 |
-| JYP Ent.  | 035900.KQ |                  4 |                  6 |                6 |             7 |                3 |                 4 |
-| 파두        | 440110.KQ |                  4 |                  7 |                6 |             8 |                9 |                 3 |
-| 하나마이크론    | 067310.KQ |                  4 |                  6 |                4 |             5 |                7 |                 3 |
-| 쎄트렉아이     | 099320.KQ |                  4 |                  7 |                6 |             7 |                8 |                 3 |
-| 하이젠알앤엠    | 160190.KQ |                  3 |                  7 |                8 |             7 |                6 |                 4 |
-| 신성델타테크    | 065350.KQ |                  4 |                  6 |                7 |             6 |                8 |                 4 |
-| 씨어스테크놀로지  | 458870.KQ |                  4 |                  8 |                8 |             7 |                6 |                 4 |
-| 심텍        | 222800.KQ |                  4 |                  6 |                7 |             6 |                8 |                 4 |
-| 리브스메드     | 491000.KQ |                  3 |                  6 |                6 |             7 |                8 |                 4 |
-| 오스코텍      | 039200.KQ |                  4 |                  6 |                4 |             6 |                7 |                 5 |
-| 서진시스템     | 178320.KQ |                  4 |                  6 |                6 |             5 |                7 |                 4 |
-| 엔켐        | 348370.KQ |                  3 |                  6 |                4 |             6 |                4 |                 3 |
-| 파크시스템스    | 140860.KQ |                  5 |                  7 |                6 |             5 |                4 |                 6 |
-| 에스앤에스텍    | 101490.KQ |                  6 |                  7 |                6 |             5 |                6 |                 4 |
-| 하림지주      | 003380.KQ |                  4 |                  3 |                4 |             6 |                4 |                 6 |
-| 스피어       | 347700.KQ |                  3 |                  7 |                8 |             7 |                9 |                 3 |
-| 휴림로봇      | 090710.KQ |                  4 |                  6 |                7 |             6 |                6 |                 4 |
-| 젬백스       | 082270.KQ |                  3 |                  6 |                7 |             6 |                4 |                 3 |
-| 우리기술      | 032820.KQ |                  4 |                  6 |                6 |             5 |                8 |                 4 |
-| 삼현        | 437730.KQ |                  4 |                  6 |                6 |             5 |                4 |                 3 |
-| CJ ENM    | 035760.KQ |                  6 |                  7 |                6 |             7 |                8 |                 4 |
-| 테크윙       | 089030.KQ |                  3 |                  4 |                6 |             5 |                3 |                 4 |
-| 피에스케이     | 319660.KQ |                  6 |                  7 |                8 |             7 |                6 |                 4 |
-| 클로봇       | 466100.KQ |                  3 |                  6 |                7 |             6 |                4 |                 3 |
-| 와이씨       | 232140.KQ |                  4 |                  6 |                6 |             5 |                7 |                 4 |
-| HK이노엔     | 195940.KQ |                  6 |                  7 |                8 |             7 |                9 |                 4 |
-| 성호전자      | 043260.KQ |                  3 |                  6 |                6 |             7 |                9 |                 3 |
-| 제주반도체     | 080220.KQ |                  4 |                  6 |                4 |             3 |                6 |                 4 |
-| LS마린솔루션   | 060370.KQ |                  4 |                  6 |                7 |             6 |                4 |                 3 |
-| 피에스케이홀딩스  | 031980.KQ |                  6 |                  7 |                8 |             7 |                6 |                 5 |
-| 테스        | 095610.KQ |                  6 |                  7 |                8 |             7 |                6 |                 4 |
-| 에이프릴바이오   | 397030.KQ |                  4 |                  7 |                6 |             7 |                8 |                 4 |
-| 스튜디오드래곤   | 253450.KQ |                  4 |                  7 |                6 |             7 |                8 |                 5 |
-| 와이지엔터테인먼트 | 122870.KQ |                  6 |                  7 |                6 |             8 |                5 |                 4 |
-| 유일로보틱스    | 388720.KQ |                  4 |                  7 |                8 |             7 |                6 |                 3 |
-| 카카오게임즈    | 293490.KQ |                  4 |                  5 |                6 |             5 |                4 |                 6 |
-| 미래에셋벤처투자  | 100790.KQ |                  3 |                  6 |                6 |             5 |                8 |                 3 |
-| 지투지바이오    | 456160.KQ |                  3 |                  4 |                6 |             5 |                4 |                 3 |
-| 씨엠티엑스     | 388210.KQ |                  4 |                  6 |                6 |             5 |                6 |                 4 |
-| 루닛        | 328130.KQ |                  4 |                  7 |                6 |             7 |                6 |                 4 |
-| 제이앤티씨     | 204270.KQ |                  4 |                  7 |                8 |             7 |                9 |                 3 |
-| 하나머티리얼즈   | 166090.KQ |                  6 |                  7 |                5 |             6 |                7 |                 4 |
-| 유진로봇      | 056080.KQ |                  3 |                  6 |                7 |             6 |                5 |                 4 |
-| 큐리언트      | 115180.KQ |                  3 |                  7 |                8 |             7 |                6 |                 4 |
-| 두산테스나     | 131970.KQ |                  4 |                  6 |                4 |             5 |                6 |                 3 |
-| 피엔티       | 137400.KQ |                  6 |                  7 |                8 |             7 |                6 |                 4 |
-| 코미코       | 183300.KQ |                  6 |                  7 |                7 |             6 |                5 |                 4 |
-| 서부T&D     | 006730.KQ |                  6 |                  7 |                7 |             6 |                8 |                 4 |
+| 종목명      | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
+|:---------|:----------|-------------------:|-------------------:|-----------------:|--------------:|-----------------:|------------------:|
+| 레인보우로보틱스 | 277810.KQ |                  4 |                  5 |                5 |             6 |                7 |                 3 |
+| 에코프로비엠   | 247540.KQ |                  4 |                  5 |                6 |             7 |                8 |                 3 |
+| 알테오젠     | 196170.KQ |                  4 |                  3 |                3 |             4 |                2 |                 3 |
+| 삼천당제약    | 000250.KQ |                  4 |                  5 |                4 |             5 |                3 |                 3 |
+| 에코프로     | 086520.KQ |                  4 |                  6 |                5 |             6 |                8 |                 4 |
+| 에이비엘바이오  | 298380.KQ |                  3 |                  4 |                3 |             4 |                2 |                 3 |
+| 코오롱티슈진   | 950160.KQ |                  4 |                  5 |                4 |             6 |                3 |                 5 |
+| 리노공업     | 058470.KQ |                  6 |                  7 |                5 |             6 |                4 |                 4 |
+| 리가켐바이오   | 141080.KQ |                  4 |                  5 |                4 |             6 |                3 |                 3 |
+| HLB      | 028300.KQ |                  4 |                  5 |                5 |             4 |                6 |                 3 |
+| 펩트론      | 087010.KQ |                  3 |                  4 |                4 |             6 |                2 |                 3 |
+| 케어젠      | 214370.KQ |                  5 |                  4 |                3 |             4 |                6 |                 4 |
+| 이오테크닉스   | 039030.KQ |                  6 |                  5 |                4 |             6 |                4 |                 5 |
+| 원익IPS    | 240810.KQ |                  6 |                  7 |                4 |             5 |                8 |                 6 |
+| 클래시스     | 214150.KQ |                  6 |                  7 |                4 |             5 |                4 |                 6 |
+| 메지온      | 140410.KQ |                  4 |                  3 |                5 |             4 |                4 |                 3 |
+| 로보티즈     | 108490.KQ |                  4 |                  5 |                5 |             3 |                3 |                 4 |
+| HPSP     | 403870.KQ |                  6 |                  5 |                4 |             5 |                7 |                 5 |
+| 보로노이     | 310210.KQ |                  3 |                  4 |                4 |             5 |                2 |                 3 |
+| 파마리서치    | 214450.KQ |                  4 |                  7 |                5 |             6 |                3 |                 3 |
+| ISC      | 095340.KQ |                  7 |                  8 |                9 |             8 |                9 |                 6 |
+| 디앤디파마텍   | 347850.KQ |                  3 |                  4 |                7 |             6 |                2 |                 4 |
+| 펄어비스     | 263750.KQ |                  6 |                  5 |                4 |             3 |                5 |                 6 |
+| 현대무벡스    | 319400.KQ |                  4 |                  5 |                6 |             7 |                4 |                 3 |
+| 에임드바이오   | 0009K0.KQ |                  7 |                  8 |                9 |             8 |                3 |                 4 |
+| 솔브레인     | 357780.KQ |                  7 |                  8 |                8 |             7 |                5 |                 4 |
+| 휴젤       | 145020.KQ |                  6 |                  7 |                8 |             7 |                4 |                 5 |
+| 에스티팜     | 237690.KQ |                  5 |                  7 |                7 |             6 |                4 |                 3 |
+| 셀트리온제약   | 068760.KQ |                  7 |                  6 |                8 |             7 |                5 |                 6 |
+| 에스피지     | 058610.KQ |                  6 |                  7 |                8 |             7 |                4 |                 3 |

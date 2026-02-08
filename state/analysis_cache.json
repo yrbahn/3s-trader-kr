@@ -1,16 +1,16 @@
 {
   "date": "2026-02-08",
   "results": {
-    "086520.KQ": {
-      "ticker": "086520.KQ",
-      "name": "에코프로",
+    "277810.KQ": {
+      "ticker": "277810.KQ",
+      "name": "레인보우로보틱스",
       "scores": {
         "financial_health": 4,
-        "growth_potential": 6,
-        "news_sentiment": 7,
+        "growth_potential": 5,
+        "news_sentiment": 5,
         "news_impact": 6,
-        "price_momentum": 8,
-        "volatility_risk": 5
+        "price_momentum": 7,
+        "volatility_risk": 3
       },
       "data": {
         "price": 500000
@@ -21,41 +21,11 @@
       "name": "에코프로비엠",
       "scores": {
         "financial_health": 4,
-        "growth_potential": 6,
-        "news_sentiment": 7,
-        "news_impact": 6,
-        "price_momentum": 8,
-        "volatility_risk": 5
-      },
-      "data": {
-        "price": 500000
-      }
-    },
-    "000250.KQ": {
-      "ticker": "000250.KQ",
-      "name": "삼천당제약",
-      "scores": {
-        "financial_health": 3,
         "growth_potential": 5,
-        "news_sentiment": 4,
-        "news_impact": 3,
-        "price_momentum": 7,
-        "volatility_risk": 8
-      },
-      "data": {
-        "price": 500000
-      }
-    },
-    "277810.KQ": {
-      "ticker": "277810.KQ",
-      "name": "레인보우로보틱스",
-      "scores": {
-        "financial_health": 3,
-        "growth_potential": 7,
-        "news_sentiment": 5,
-        "news_impact": 6,
+        "news_sentiment": 6,
+        "news_impact": 7,
         "price_momentum": 8,
-        "volatility_risk": 6
+        "volatility_risk": 3
       },
       "data": {
         "price": 500000
@@ -65,75 +35,45 @@
       "ticker": "196170.KQ",
       "name": "알테오젠",
       "scores": {
-        "financial_health": 3,
-        "growth_potential": 6,
+        "financial_health": 4,
+        "growth_potential": 3,
+        "news_sentiment": 3,
+        "news_impact": 4,
+        "price_momentum": 2,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 361000
+      }
+    },
+    "000250.KQ": {
+      "ticker": "000250.KQ",
+      "name": "삼천당제약",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
         "news_sentiment": 4,
         "news_impact": 5,
+        "price_momentum": 3,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 361000
+      }
+    },
+    "086520.KQ": {
+      "ticker": "086520.KQ",
+      "name": "에코프로",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 6,
+        "news_sentiment": 5,
+        "news_impact": 6,
         "price_momentum": 8,
-        "volatility_risk": 7
+        "volatility_risk": 4
       },
       "data": {
         "price": 500000
-      }
-    },
-    "141080.KQ": {
-      "ticker": "141080.KQ",
-      "name": "리가켐바이오",
-      "scores": {
-        "financial_health": 3,
-        "growth_potential": 5,
-        "news_sentiment": 4,
-        "news_impact": 6,
-        "price_momentum": 3,
-        "volatility_risk": 7
-      },
-      "data": {
-        "price": 50700
-      }
-    },
-    "950160.KQ": {
-      "ticker": "950160.KQ",
-      "name": "코오롱티슈진",
-      "scores": {
-        "financial_health": 3,
-        "growth_potential": 4,
-        "news_sentiment": 5,
-        "news_impact": 4,
-        "price_momentum": 6,
-        "volatility_risk": 5
-      },
-      "data": {
-        "price": 94300
-      }
-    },
-    "028300.KQ": {
-      "ticker": "028300.KQ",
-      "name": "HLB",
-      "scores": {
-        "financial_health": 3,
-        "growth_potential": 4,
-        "news_sentiment": 5,
-        "news_impact": 4,
-        "price_momentum": 3,
-        "volatility_risk": 6
-      },
-      "data": {
-        "price": 50700
-      }
-    },
-    "058470.KQ": {
-      "ticker": "058470.KQ",
-      "name": "리노공업",
-      "scores": {
-        "financial_health": 5,
-        "growth_potential": 6,
-        "news_sentiment": 5,
-        "news_impact": 4,
-        "price_momentum": 3,
-        "volatility_risk": 7
-      },
-      "data": {
-        "price": 50700
       }
     },
     "298380.KQ": {
@@ -141,14 +81,374 @@
       "name": "에이비엘바이오",
       "scores": {
         "financial_health": 3,
-        "growth_potential": 5,
-        "news_sentiment": 4,
-        "news_impact": 5,
-        "price_momentum": 3,
-        "volatility_risk": 7
+        "growth_potential": 4,
+        "news_sentiment": 3,
+        "news_impact": 4,
+        "price_momentum": 2,
+        "volatility_risk": 3
       },
       "data": {
         "price": 177600
+      }
+    },
+    "950160.KQ": {
+      "ticker": "950160.KQ",
+      "name": "코오롱티슈진",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
+        "news_sentiment": 4,
+        "news_impact": 6,
+        "price_momentum": 3,
+        "volatility_risk": 5
+      },
+      "data": {
+        "price": 94300
+      }
+    },
+    "058470.KQ": {
+      "ticker": "058470.KQ",
+      "name": "리노공업",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 7,
+        "news_sentiment": 5,
+        "news_impact": 6,
+        "price_momentum": 4,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 94300
+      }
+    },
+    "141080.KQ": {
+      "ticker": "141080.KQ",
+      "name": "리가켐바이오",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
+        "news_sentiment": 4,
+        "news_impact": 6,
+        "price_momentum": 3,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 169800
+      }
+    },
+    "028300.KQ": {
+      "ticker": "028300.KQ",
+      "name": "HLB",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
+        "news_sentiment": 5,
+        "news_impact": 4,
+        "price_momentum": 6,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 95700
+      }
+    },
+    "087010.KQ": {
+      "ticker": "087010.KQ",
+      "name": "펩트론",
+      "scores": {
+        "financial_health": 3,
+        "growth_potential": 4,
+        "news_sentiment": 4,
+        "news_impact": 6,
+        "price_momentum": 2,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 247500
+      }
+    },
+    "214370.KQ": {
+      "ticker": "214370.KQ",
+      "name": "케어젠",
+      "scores": {
+        "financial_health": 5,
+        "growth_potential": 4,
+        "news_sentiment": 3,
+        "news_impact": 4,
+        "price_momentum": 6,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 115200
+      }
+    },
+    "039030.KQ": {
+      "ticker": "039030.KQ",
+      "name": "이오테크닉스",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 5,
+        "news_sentiment": 4,
+        "news_impact": 6,
+        "price_momentum": 4,
+        "volatility_risk": 5
+      },
+      "data": {
+        "price": 66600
+      }
+    },
+    "240810.KQ": {
+      "ticker": "240810.KQ",
+      "name": "원익IPS",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 7,
+        "news_sentiment": 4,
+        "news_impact": 5,
+        "price_momentum": 8,
+        "volatility_risk": 6
+      },
+      "data": {
+        "price": 108800
+      }
+    },
+    "214150.KQ": {
+      "ticker": "214150.KQ",
+      "name": "클래시스",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 7,
+        "news_sentiment": 4,
+        "news_impact": 5,
+        "price_momentum": 4,
+        "volatility_risk": 6
+      },
+      "data": {
+        "price": 66600
+      }
+    },
+    "140410.KQ": {
+      "ticker": "140410.KQ",
+      "name": "메지온",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 3,
+        "news_sentiment": 5,
+        "news_impact": 4,
+        "price_momentum": 4,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 139000
+      }
+    },
+    "108490.KQ": {
+      "ticker": "108490.KQ",
+      "name": "로보티즈",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
+        "news_sentiment": 5,
+        "news_impact": 3,
+        "price_momentum": 3,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 273000
+      }
+    },
+    "403870.KQ": {
+      "ticker": "403870.KQ",
+      "name": "HPSP",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 5,
+        "news_sentiment": 4,
+        "news_impact": 5,
+        "price_momentum": 7,
+        "volatility_risk": 5
+      },
+      "data": {
+        "price": 45850
+      }
+    },
+    "310210.KQ": {
+      "ticker": "310210.KQ",
+      "name": "보로노이",
+      "scores": {
+        "financial_health": 3,
+        "growth_potential": 4,
+        "news_sentiment": 4,
+        "news_impact": 5,
+        "price_momentum": 2,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 340000
+      }
+    },
+    "214450.KQ": {
+      "ticker": "214450.KQ",
+      "name": "파마리서치",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 7,
+        "news_sentiment": 5,
+        "news_impact": 6,
+        "price_momentum": 3,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 340000
+      }
+    },
+    "095340.KQ": {
+      "ticker": "095340.KQ",
+      "name": "ISC",
+      "scores": {
+        "financial_health": 7,
+        "growth_potential": 8,
+        "news_sentiment": 9,
+        "news_impact": 8,
+        "price_momentum": 9,
+        "volatility_risk": 6
+      },
+      "data": {
+        "price": 163500
+      }
+    },
+    "347850.KQ": {
+      "ticker": "347850.KQ",
+      "name": "디앤디파마텍",
+      "scores": {
+        "financial_health": 3,
+        "growth_potential": 4,
+        "news_sentiment": 7,
+        "news_impact": 6,
+        "price_momentum": 2,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 77500
+      }
+    },
+    "263750.KQ": {
+      "ticker": "263750.KQ",
+      "name": "펄어비스",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 5,
+        "news_sentiment": 4,
+        "news_impact": 3,
+        "price_momentum": 5,
+        "volatility_risk": 6
+      },
+      "data": {
+        "price": 53300
+      }
+    },
+    "319400.KQ": {
+      "ticker": "319400.KQ",
+      "name": "현대무벡스",
+      "scores": {
+        "financial_health": 4,
+        "growth_potential": 5,
+        "news_sentiment": 6,
+        "news_impact": 7,
+        "price_momentum": 4,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 31050
+      }
+    },
+    "0009K0.KQ": {
+      "ticker": "0009K0.KQ",
+      "name": "에임드바이오",
+      "scores": {
+        "financial_health": 7,
+        "growth_potential": 8,
+        "news_sentiment": 9,
+        "news_impact": 8,
+        "price_momentum": 3,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 77500
+      }
+    },
+    "357780.KQ": {
+      "ticker": "357780.KQ",
+      "name": "솔브레인",
+      "scores": {
+        "financial_health": 7,
+        "growth_potential": 8,
+        "news_sentiment": 8,
+        "news_impact": 7,
+        "price_momentum": 5,
+        "volatility_risk": 4
+      },
+      "data": {
+        "price": 407000
+      }
+    },
+    "145020.KQ": {
+      "ticker": "145020.KQ",
+      "name": "휴젤",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 7,
+        "news_sentiment": 8,
+        "news_impact": 7,
+        "price_momentum": 4,
+        "volatility_risk": 5
+      },
+      "data": {
+        "price": 243500
+      }
+    },
+    "237690.KQ": {
+      "ticker": "237690.KQ",
+      "name": "에스티팜",
+      "scores": {
+        "financial_health": 5,
+        "growth_potential": 7,
+        "news_sentiment": 7,
+        "news_impact": 6,
+        "price_momentum": 4,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 146700
+      }
+    },
+    "068760.KQ": {
+      "ticker": "068760.KQ",
+      "name": "셀트리온제약",
+      "scores": {
+        "financial_health": 7,
+        "growth_potential": 6,
+        "news_sentiment": 8,
+        "news_impact": 7,
+        "price_momentum": 5,
+        "volatility_risk": 6
+      },
+      "data": {
+        "price": 68100
+      }
+    },
+    "058610.KQ": {
+      "ticker": "058610.KQ",
+      "name": "에스피지",
+      "scores": {
+        "financial_health": 6,
+        "growth_potential": 7,
+        "news_sentiment": 8,
+        "news_impact": 7,
+        "price_momentum": 4,
+        "volatility_risk": 3
+      },
+      "data": {
+        "price": 136100
       }
     }
   }
