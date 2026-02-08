@@ -311,12 +311,15 @@ def main():
 
     filename = f"reports/3S_Trader_Report_{today_str}.md"; os.makedirs("reports", exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
-        f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n## 🧠 1. Strategy\n{current_strategy}\n\n")
+        f.write(f"# 3S-Trader KR 전략 리포트 ({today_str})\n\n")
+        f.write(f"## 🧠 1. Strategy\n{current_strategy}\n\n")
         
-        if len(trajectory) > 1:
-            f.write("## 📈 2. Performance Tracking (과거 추천 성과)\n")
+        # 성과 모니터링 섹션 (무조건 출력하여 번호 유지)
+        f.write("## 📈 2. Performance Tracking (과거 추천 성과)\n")
+        past_entries = [e for e in trajectory if e['date'] != today_str]
+        if past_entries:
             perf_list = []
-            for t_entry in reversed([e for e in trajectory if e['date'] != today_str]):
+            for t_entry in reversed(past_entries):
                 picks = []
                 for s in t_entry.get('selected', []):
                     code = s.get('stock_code', 'N/A')
@@ -324,7 +327,9 @@ def main():
                     clean_code = match.group(1) if match else str(code)
                     picks.append(f"{clean_code} ({s.get('return', 0)}%)")
                 perf_list.append({"추천일": t_entry['date'], "추천종목 (수익률)": ", ".join(picks[:5]), "평균수익률": f"{t_entry.get('perf', 0)}%"})
-            if perf_list: f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
+            f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
+        else:
+            f.write("*첫 실행이거나 과거 기록이 없습니다. 내일부터 실시간 성과 추적이 표시됩니다.*\n\n")
 
         f.write(f"## 🎯 3. Selection (Today's TOP 5)\n")
         # 선별된 종목 매칭 (유연한 검색)
@@ -342,9 +347,11 @@ def main():
 
         if selected_entries:
             df = pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], "비중": weight_map.get(s['ticker'], 0), "현재가": s['data']['price'], "Total": sum(s['scores'].values())} for s in selected_entries])
-            f.write(df.sort_values("비중", ascending=False).to_markdown(index=False))
+            f.write(df.sort_values("비중", ascending=False).to_markdown(index=False) + "\n\n")
+        else:
+            f.write("*선택된 종목이 없거나 매칭에 실패했습니다.*\n\n")
         
-        f.write("\n\n## 📊 4. Scoring Detail\n")
+        f.write("## 📊 4. Scoring Detail\n")
         f.write(pd.DataFrame([{"종목명": s['name'], "티커": s['ticker'], **s['scores']} for s in scored_universe]).to_markdown(index=False))
     
     print(f"Report: {filename}")

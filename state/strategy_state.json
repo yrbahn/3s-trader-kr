@@ -2,45 +2,35 @@
   "trajectory": [
     {
       "date": "2026-02-08",
-      "strategy": "Refine the Catalyst-Driven Value strategy by incorporating earnings estimate revisions as a key catalyst indicator. Prioritize stocks with positive earnings revisions alongside low P/B, P/E, and oversold RSI conditions. Maintain strict diversification (max 20% per stock) and positive net income requirement. This enhances the focus on fundamentally improving undervalued assets poised for price normalization.\n",
+      "strategy": "Incorporate earnings estimate revisions into the Catalyst-Driven Value strategy. Prioritize stocks exhibiting positive earnings revisions alongside low P/B, P/E, and oversold RSI. Maintain diversification (max 20% per stock) and positive net income requirement to focus on fundamentally improving undervalued assets.\n",
       "selected": [
         {
-          "stock_code": "420770.KQ",
+          "stock_code": "디어유 (376300.KQ)",
           "weight": 20,
-          "buy_price": 58500,
-          "current_price": 58500,
-          "return": 0.0
+          "buy_price": 0
         },
         {
-          "stock_code": "376300.KQ",
+          "stock_code": "감성코퍼레이션 (036620.KQ)",
           "weight": 20,
-          "buy_price": 89800,
-          "current_price": 41050,
-          "return": -54.29
+          "buy_price": 0
         },
         {
-          "stock_code": "036620.KQ",
+          "stock_code": "ISC (095340.KQ)",
           "weight": 20,
-          "buy_price": 53700,
-          "current_price": 6510,
-          "return": -87.88
+          "buy_price": 0
         },
         {
-          "stock_code": "095340.KQ",
+          "stock_code": "기가비스 (420770.KQ)",
           "weight": 20,
-          "buy_price": 163500,
-          "current_price": 163500,
-          "return": 0.0
+          "buy_price": 0
         },
         {
-          "stock_code": "074600.KQ",
+          "stock_code": "네오셈 (253590.KQ)",
           "weight": 20,
-          "buy_price": 29000,
-          "current_price": 29000,
-          "return": 0.0
+          "buy_price": 0
         }
       ],
-      "perf": -28.43
+      "perf": 0.0
     }
   ]
 }

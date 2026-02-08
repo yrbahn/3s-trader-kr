@@ -1,17 +1,20 @@
 # 3S-Trader KR 전략 리포트 (2026-02-08)
 
 ## 🧠 1. Strategy
-Refine the Catalyst-Driven Value strategy by incorporating earnings estimate revisions as a key catalyst indicator. Prioritize stocks with positive earnings revisions alongside low P/B, P/E, and oversold RSI conditions. Maintain strict diversification (max 20% per stock) and positive net income requirement. This enhances the focus on fundamentally improving undervalued assets poised for price normalization.
+Incorporate earnings estimate revisions into the Catalyst-Driven Value strategy. Prioritize stocks exhibiting positive earnings revisions alongside low P/B, P/E, and oversold RSI. Maintain diversification (max 20% per stock) and positive net income requirement to focus on fundamentally improving undervalued assets.
 
+
+## 📈 2. Performance Tracking (과거 추천 성과)
+*첫 실행이거나 과거 기록이 없습니다. 내일부터 실시간 성과 추적이 표시됩니다.*
 
 ## 🎯 3. Selection (Today's TOP 5)
 | 종목명     | 티커        |   비중 |    현재가 |   Total |
 |:--------|:----------|-----:|-------:|--------:|
-| 기가비스    | 420770.KQ |   20 |  58500 |      50 |
 | 디어유     | 376300.KQ |   20 |  89800 |      46 |
 | 감성코퍼레이션 | 036620.KQ |   20 |  53700 |      45 |
 | ISC     | 095340.KQ |   20 | 163500 |      44 |
-| 원익QnC   | 074600.KQ |   20 |  29000 |      44 |
+| 기가비스    | 420770.KQ |   20 |  58500 |      50 |
+| 네오셈     | 253590.KQ |   20 |  16890 |      39 |
 
 ## 📊 4. Scoring Detail
 | 종목명         | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
