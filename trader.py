@@ -329,7 +329,7 @@ def main():
     current_strategy = strategy_agent(trajectory, market_overview)
     print(f"Strategy: {current_strategy[:50]}...")
 
-    universe = get_stock_universe(limit=30)
+    universe = get_stock_universe(limit=50)
     
     def process(t):
         raw = _get_stock_data(t)
