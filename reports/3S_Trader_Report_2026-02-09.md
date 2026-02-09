@@ -1,26 +1,28 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Based on the sharp contrast in performance between the two recent strategies, a clear pivot is required.
+Based on the analysis of the recent performance divergence—specifically the success of the Feb 8th strategy (+5.64%) versus the volatility-induced failure of the Feb 9th strategy (-7.18%)—a refined approach is necessary.
 
-**Analysis of Performance:**
-1.  **The Failure (2026-02-09, -17.67%):** The "Quality-First Momentum" strategy failed catastrophically. By chasing "High ROE" and "Relative Strength," the portfolio likely bought into overextended, crowded trades that unwound violently (evidenced by the -61.97% and -28.91% losses). In a "Stable" market, high-beta momentum plays introduced unacceptable idiosyncratic risk.
-2.  **The Success (2026-02-08, +5.64%):** The "Catalyst-Driven Value" strategy performed exceptionally well. It succeeded by combining **Value** (Low P/B, P/E) with **Fundamental Momentum** (Earnings Revisions) rather than Price Momentum. This approach captured upside while providing a valuation safety net.
+**Performance Analysis:**
+1.  **The Success (Feb 8):** The "Catalyst-Driven Value" approach worked because it targeted undervalued companies (Low P/B, P/E) with *actual* fundamental improvements (Earnings Revisions).
+2.  **The Failure (Feb 9):** The "Earnings-Catalyst Value Reversion" strategy failed due to a specific flaw in its technical entry criteria. By seeking "Oversold (RSI < 45)" assets without a strict enough volatility filter, the portfolio caught a "falling knife" (Stock 196170.KQ, -28.91%). In a "Stable" market, buying distressed assets introduces unnecessary idiosyncratic risk.
 
 **Refined Strategy Recommendation:**
 
-**Strategy Name: Earnings-Catalyst Value Reversion**
+**Strategy Name: Quality-Anchored Value with Volatility Dampening**
 
 **Rationale:**
-To replicate the success of the Feb 8th portfolio and eliminate the tail risk seen on Feb 9th, we will revert to a **valuation-anchored approach driven by fundamental updates**. We are abandoning "Price Momentum" (buying winners) in favor of "Fundamental Momentum" (buying improving companies) to avoid overvalued traps.
+To capture the upside of the Feb 8th strategy while eliminating the tail risk seen on Feb 9th, we will maintain the **Value + Earnings** core but replace the "Oversold" entry signal with a **"Price Stability"** filter. We are seeking undervalued companies that are steadily climbing, not distressed assets hoping for a bounce.
 
 **Selection Criteria:**
-1.  **Primary Catalyst (Earnings Revisions):** Prioritize stocks with **upward EPS estimates** or recent positive earnings surprises. This was the key differentiator in the successful portfolio.
-2.  **Valuation Safety Net:** Re-impose strict **Low P/E and Low P/B** limits. This ensures we are buying assets with a margin of safety, protecting against the massive drawdowns seen in "High ROE" growth stocks.
-3.  **Technical Entry (Mean Reversion):** Instead of buying breakouts (which failed), target **Oversold conditions (RSI < 45-50)** within a longer-term uptrend. We want to buy dips in fundamentally improving companies.
-4.  **Risk Control:** Exclude stocks with **extreme recent volatility** (Standard Deviation > Market Average) to avoid "falling knives" regardless of their theoretical quality.
+1.  **Fundamental Engine (Earnings & Profitability):** Continue to prioritize stocks with **Positive Earnings Revisions** and strict **Positive Net Income**. This ensures the business is growing, not shrinking.
+2.  **Valuation Guardrails:** Maintain focus on **Low P/E and Low P/B** to ensure a margin of safety.
+3.  **Risk Control (The Pivot):**
+    *   **Exclude High Volatility:** Filter out stocks with extreme recent standard deviation or those that have suffered a >10% drawdown in the last 5 trading days. We are avoiding "falling knives."
+    *   **Technical Trend:** Instead of "Oversold," look for **Neutral to Positive Momentum** (Price > 20-day Moving Average). We want assets participating in the "Stable" market trend, not fighting against it.
+4.  **Weighting:** Equal Weight (20%) to minimize single-stock impact.
 
-**Weighting:** Maintain **Equal Weighting (20%)** to mitigate single-stock risk.
+**Objective:** Generate consistent alpha through undervalued growers while strictly filtering out the downside volatility that caused the previous portfolio's drawdown.
 
 ## 📈 2. Performance Tracking (과거 추천 성과)
 | 추천일        | 추천종목 (수익률)                                                                                    | 평균수익률   |
