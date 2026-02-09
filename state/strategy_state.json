@@ -34,45 +34,45 @@
     },
     {
       "date": "2026-02-09",
-      "strategy": "Based on the neutral performance (0.0%) of the previous allocation and the current \"Stable\" market signal, the strategy should shift from a pure \"Oversold/Value\" approach to a \"Quality/Momentum\" blend. In a stable market, low-quality undervalued stocks often stagnate (value traps), whereas companies with proven profitability and upward revisions tend to outperform.\n\n**Refined Strategy Recommendation:**\n\n\"Adopt a **'Quality-Adjusted Earnings Momentum'** strategy. Retain the core filter for **positive earnings revisions** and **attractive valuation** (Low P/E, P/B), but replace the 'oversold RSI' metric with a **profitability threshold (High ROE or Operating Margin)** to ensure asset quality in a stable environment. Reduce sector concentration (previously heavy in semiconductors) by selecting leaders across diverse industries that are demonstrating price stability or early trend reversal. Maintain a maximum weight of 20% per stock to manage idiosyncratic risk.\"",
+      "strategy": "Based on the severe underperformance (-18.26%) of the previous \"Quality-Adjusted Earnings Momentum\" strategy—specifically driven by catastrophic drawdowns in individual holdings (e.g., -62% and -29%)—it is evident that fundamental quality metrics alone failed to filter out assets in severe technical decline.\n\nIn a \"Stable\" market, the strategy must pivot to prioritize **capital preservation and trend alignment** to avoid \"falling knives.\"\n\n**Refined Strategy Recommendation:**\n\n\"Adopt a **'Low-Volatility Trend-Value'** strategy. While retaining the core fundamental drivers of **Positive Earnings Revisions** and **Attractive Valuation** (Low P/E, P/B), immediately introduce a **Technical Trend Filter** (Price > 20-day or 60-day Moving Average) to disqualify stocks currently in a downtrend. Furthermore, apply a **Low Volatility** constraint (excluding stocks with extreme Beta or recent high variance) to align with the 'Stable' market signal and mitigate the idiosyncratic tail risk that caused recent heavy losses.\"",
       "selected": [
         {
           "stock_code": "095340.KQ",
-          "weight": 0.2,
+          "weight": 0.25,
           "buy_price": 174800,
-          "current_price": 175000,
-          "return": 0.11
+          "current_price": 175800,
+          "return": 0.57
         },
         {
           "stock_code": "196170.KQ",
           "weight": 0.2,
           "buy_price": 543000,
-          "current_price": 385500,
-          "return": -29.01
-        },
-        {
-          "stock_code": "237690.KQ",
-          "weight": 0.2,
-          "buy_price": 154600,
-          "current_price": 154700,
-          "return": 0.06
+          "current_price": 386000,
+          "return": -28.91
         },
         {
           "stock_code": "039030.KQ",
           "weight": 0.2,
           "buy_price": 416000,
-          "current_price": 415000,
-          "return": -0.24
+          "current_price": 418000,
+          "return": 0.48
+        },
+        {
+          "stock_code": "240810.KQ",
+          "weight": 0.2,
+          "buy_price": 115400,
+          "current_price": 117100,
+          "return": 1.47
         },
         {
           "stock_code": "247540.KQ",
-          "weight": 0.2,
+          "weight": 0.15,
           "buy_price": 543000,
-          "current_price": 205000,
-          "return": -62.25
+          "current_price": 206500,
+          "return": -61.97
         }
       ],
-      "perf": -18.26
+      "perf": -14.54
     }
   ]
 }

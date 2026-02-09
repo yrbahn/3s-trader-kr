@@ -1,11 +1,13 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Based on the neutral performance (0.0%) of the previous allocation and the current "Stable" market signal, the strategy should shift from a pure "Oversold/Value" approach to a "Quality/Momentum" blend. In a stable market, low-quality undervalued stocks often stagnate (value traps), whereas companies with proven profitability and upward revisions tend to outperform.
+Based on the severe underperformance (-18.26%) of the previous "Quality-Adjusted Earnings Momentum" strategy—specifically driven by catastrophic drawdowns in individual holdings (e.g., -62% and -29%)—it is evident that fundamental quality metrics alone failed to filter out assets in severe technical decline.
+
+In a "Stable" market, the strategy must pivot to prioritize **capital preservation and trend alignment** to avoid "falling knives."
 
 **Refined Strategy Recommendation:**
 
-"Adopt a **'Quality-Adjusted Earnings Momentum'** strategy. Retain the core filter for **positive earnings revisions** and **attractive valuation** (Low P/E, P/B), but replace the 'oversold RSI' metric with a **profitability threshold (High ROE or Operating Margin)** to ensure asset quality in a stable environment. Reduce sector concentration (previously heavy in semiconductors) by selecting leaders across diverse industries that are demonstrating price stability or early trend reversal. Maintain a maximum weight of 20% per stock to manage idiosyncratic risk."
+"Adopt a **'Low-Volatility Trend-Value'** strategy. While retaining the core fundamental drivers of **Positive Earnings Revisions** and **Attractive Valuation** (Low P/E, P/B), immediately introduce a **Technical Trend Filter** (Price > 20-day or 60-day Moving Average) to disqualify stocks currently in a downtrend. Furthermore, apply a **Low Volatility** constraint (excluding stocks with extreme Beta or recent high variance) to align with the 'Stable' market signal and mitigate the idiosyncratic tail risk that caused recent heavy losses."
 
 ## 📈 2. Performance Tracking (과거 추천 성과)
 | 추천일        | 추천종목 (수익률)                                                                     | 평균수익률   |
@@ -15,11 +17,11 @@ Based on the neutral performance (0.0%) of the previous allocation and the curre
 ## 🎯 3. Selection (Today's TOP 5)
 | 종목명    | 티커        |   비중 |    현재가 |   Total |
 |:-------|:----------|-----:|-------:|--------:|
-| ISC    | 095340.KQ |  0.2 | 174800 |      46 |
-| 알테오젠   | 196170.KQ |  0.2 | 543000 |      45 |
-| 에스티팜   | 237690.KQ |  0.2 | 154600 |      45 |
-| 이오테크닉스 | 039030.KQ |  0.2 | 416000 |      34 |
-| 에코프로비엠 | 247540.KQ |  0.2 | 543000 |      36 |
+| ISC    | 095340.KQ | 0.25 | 174800 |      46 |
+| 알테오젠   | 196170.KQ | 0.2  | 543000 |      45 |
+| 이오테크닉스 | 039030.KQ | 0.2  | 416000 |      34 |
+| 원익IPS  | 240810.KQ | 0.2  | 115400 |      29 |
+| 에코프로비엠 | 247540.KQ | 0.15 | 543000 |      36 |
 
 ## 📊 4. Scoring Detail
 | 종목명      | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
@@ -38,10 +40,10 @@ Based on the neutral performance (0.0%) of the previous allocation and the curre
 | 펩트론      | 087010.KQ |                  1 |                  2 |                3 |             4 |                2 |                 3 |
 | 원익IPS    | 240810.KQ |                  8 |                  7 |                1 |             1 |                9 |                 3 |
 | 이오테크닉스   | 039030.KQ |                  8 |                  7 |                3 |             4 |                9 |                 3 |
-| 클래시스     | 214150.KQ |                  8 |                  7 |                3 |             4 |                3 |                 3 |
 | 메지온      | 140410.KQ |                  1 |                  1 |                1 |             1 |                2 |                 2 |
-| 보로노이     | 310210.KQ |                  1 |                  3 |                3 |             3 |                8 |                 4 |
+| 클래시스     | 214150.KQ |                  8 |                  7 |                3 |             4 |                3 |                 3 |
 | 로보티즈     | 108490.KQ |                  8 |                  7 |                1 |             1 |                2 |                 2 |
+| 보로노이     | 310210.KQ |                  1 |                  3 |                3 |             3 |                8 |                 4 |
 | HPSP     | 403870.KQ |                  3 |                  4 |                5 |             3 |                8 |                 4 |
 | ISC      | 095340.KQ |                  8 |                  9 |                9 |             7 |               10 |                 3 |
 | 디앤디파마텍   | 347850.KQ |                  1 |                  7 |                8 |             6 |                2 |                 3 |
@@ -52,5 +54,5 @@ Based on the neutral performance (0.0%) of the previous allocation and the curre
 | 솔브레인     | 357780.KQ |                  7 |                  7 |                7 |             5 |                2 |                 3 |
 | 에스티팜     | 237690.KQ |                  9 |                  8 |                9 |             7 |                6 |                 6 |
 | 셀트리온제약   | 068760.KQ |                  7 |                  7 |                8 |             6 |                7 |                 5 |
-| 휴젤       | 145020.KQ |                  3 |                  8 |                8 |             7 |                7 |                 5 |
 | 에스피지     | 058610.KQ |                  8 |                  9 |                8 |             7 |                2 |                 3 |
+| 휴젤       | 145020.KQ |                  3 |                  8 |                8 |             7 |                7 |                 5 |
