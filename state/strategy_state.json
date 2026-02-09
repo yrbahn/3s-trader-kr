@@ -44,45 +44,43 @@
     },
     {
       "date": "2026-02-09",
-      "strategy": "Based on the severe underperformance (-14.54%) of the previous \"Low-Volatility Trend-Value\" strategy—which failed to prevent catastrophic idiosyncratic losses (e.g., -61.97% and -28.91%)—it is clear that **valuation metrics (Low P/E, P/B) are currently acting as \"value traps,\"** selecting distressed assets rather than undervalued opportunities.\n\nIn a \"Stable\" market environment, the priority must shift from \"bargain hunting\" to **quality assurance** to eliminate tail risk.\n\n**Refined Strategy Recommendation:**\n\n**\"Quality-First Momentum with Strict Drawdown Control\"**\n\n1.  **Pivot from Value to Quality:** Replace Low P/B and P/E factors with **High ROE (Return on Equity)** and **Positive Operating Margins**. This ensures the portfolio holds companies with robust business models, significantly reducing the risk of sudden fundamental collapses (the -60% scenarios).\n2.  **Strengthened Trend Filter:** Maintain the **Price > 60-day Moving Average** rule but add a **Relative Strength** requirement (Stock performance > Market Index over 1 month) to ensure we are buying leaders, not laggards.\n3.  **Volatility Cap:** Exclude stocks with a **Beta > 1.5** or extreme recent daily variance to align with the \"Stable\" market signal.\n4.  **Risk Management:** Implement an **Equal Weighting** scheme (max 20% per position) to prevent single-stock disasters from dragging down the entire portfolio, as seen with the previous uneven weighting.",
+      "strategy": "Based on the sharp contrast in performance between the two recent strategies, a clear pivot is required.\n\n**Analysis of Performance:**\n1.  **The Failure (2026-02-09, -17.67%):** The \"Quality-First Momentum\" strategy failed catastrophically. By chasing \"High ROE\" and \"Relative Strength,\" the portfolio likely bought into overextended, crowded trades that unwound violently (evidenced by the -61.97% and -28.91% losses). In a \"Stable\" market, high-beta momentum plays introduced unacceptable idiosyncratic risk.\n2.  **The Success (2026-02-08, +5.64%):** The \"Catalyst-Driven Value\" strategy performed exceptionally well. It succeeded by combining **Value** (Low P/B, P/E) with **Fundamental Momentum** (Earnings Revisions) rather than Price Momentum. This approach captured upside while providing a valuation safety net.\n\n**Refined Strategy Recommendation:**\n\n**Strategy Name: Earnings-Catalyst Value Reversion**\n\n**Rationale:**\nTo replicate the success of the Feb 8th portfolio and eliminate the tail risk seen on Feb 9th, we will revert to a **valuation-anchored approach driven by fundamental updates**. We are abandoning \"Price Momentum\" (buying winners) in favor of \"Fundamental Momentum\" (buying improving companies) to avoid overvalued traps.\n\n**Selection Criteria:**\n1.  **Primary Catalyst (Earnings Revisions):** Prioritize stocks with **upward EPS estimates** or recent positive earnings surprises. This was the key differentiator in the successful portfolio.\n2.  **Valuation Safety Net:** Re-impose strict **Low P/E and Low P/B** limits. This ensures we are buying assets with a margin of safety, protecting against the massive drawdowns seen in \"High ROE\" growth stocks.\n3.  **Technical Entry (Mean Reversion):** Instead of buying breakouts (which failed), target **Oversold conditions (RSI < 45-50)** within a longer-term uptrend. We want to buy dips in fundamentally improving companies.\n4.  **Risk Control:** Exclude stocks with **extreme recent volatility** (Standard Deviation > Market Average) to avoid \"falling knives\" regardless of their theoretical quality.\n\n**Weighting:** Maintain **Equal Weighting (20%)** to mitigate single-stock risk.",
       "selected": [
         {
           "stock_code": "095340.KQ",
-          "weight": 0.2,
+          "weight": 20,
           "buy_price": 174800,
           "current_price": 175800,
           "return": 0.57
         },
         {
           "stock_code": "196170.KQ",
-          "weight": 0.2,
+          "weight": 20,
           "buy_price": 543000,
           "current_price": 386000,
           "return": -28.91
         },
         {
-          "stock_code": "039030.KQ",
-          "weight": 0.2,
-          "buy_price": 416000,
-          "current_price": 418000,
-          "return": 0.48
+          "stock_code": "237690.KQ",
+          "weight": 20,
+          "buy_price": 154600,
+          "current_price": 154800,
+          "return": 0.13
         },
         {
-          "stock_code": "240810.KQ",
-          "weight": 0.2,
-          "buy_price": 115400,
-          "current_price": 117100,
-          "return": 1.47
+          "stock_code": "068760.KQ",
+          "weight": 20,
+          "buy_price": 71150,
+          "current_price": 70800,
+          "return": -0.49
         },
         {
-          "stock_code": "247540.KQ",
-          "weight": 0.2,
-          "buy_price": 543000,
-          "current_price": 206500,
-          "return": -61.97
+          "stock_code": "0009K0.KQ",
+          "weight": 20,
+          "buy_price": 52300
         }
       ],
-      "perf": -17.67
+      "perf": -7.18
     }
   ]
 }

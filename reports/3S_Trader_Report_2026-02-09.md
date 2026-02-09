@@ -1,18 +1,26 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Based on the severe underperformance (-14.54%) of the previous "Low-Volatility Trend-Value" strategy—which failed to prevent catastrophic idiosyncratic losses (e.g., -61.97% and -28.91%)—it is clear that **valuation metrics (Low P/E, P/B) are currently acting as "value traps,"** selecting distressed assets rather than undervalued opportunities.
+Based on the sharp contrast in performance between the two recent strategies, a clear pivot is required.
 
-In a "Stable" market environment, the priority must shift from "bargain hunting" to **quality assurance** to eliminate tail risk.
+**Analysis of Performance:**
+1.  **The Failure (2026-02-09, -17.67%):** The "Quality-First Momentum" strategy failed catastrophically. By chasing "High ROE" and "Relative Strength," the portfolio likely bought into overextended, crowded trades that unwound violently (evidenced by the -61.97% and -28.91% losses). In a "Stable" market, high-beta momentum plays introduced unacceptable idiosyncratic risk.
+2.  **The Success (2026-02-08, +5.64%):** The "Catalyst-Driven Value" strategy performed exceptionally well. It succeeded by combining **Value** (Low P/B, P/E) with **Fundamental Momentum** (Earnings Revisions) rather than Price Momentum. This approach captured upside while providing a valuation safety net.
 
 **Refined Strategy Recommendation:**
 
-**"Quality-First Momentum with Strict Drawdown Control"**
+**Strategy Name: Earnings-Catalyst Value Reversion**
 
-1.  **Pivot from Value to Quality:** Replace Low P/B and P/E factors with **High ROE (Return on Equity)** and **Positive Operating Margins**. This ensures the portfolio holds companies with robust business models, significantly reducing the risk of sudden fundamental collapses (the -60% scenarios).
-2.  **Strengthened Trend Filter:** Maintain the **Price > 60-day Moving Average** rule but add a **Relative Strength** requirement (Stock performance > Market Index over 1 month) to ensure we are buying leaders, not laggards.
-3.  **Volatility Cap:** Exclude stocks with a **Beta > 1.5** or extreme recent daily variance to align with the "Stable" market signal.
-4.  **Risk Management:** Implement an **Equal Weighting** scheme (max 20% per position) to prevent single-stock disasters from dragging down the entire portfolio, as seen with the previous uneven weighting.
+**Rationale:**
+To replicate the success of the Feb 8th portfolio and eliminate the tail risk seen on Feb 9th, we will revert to a **valuation-anchored approach driven by fundamental updates**. We are abandoning "Price Momentum" (buying winners) in favor of "Fundamental Momentum" (buying improving companies) to avoid overvalued traps.
+
+**Selection Criteria:**
+1.  **Primary Catalyst (Earnings Revisions):** Prioritize stocks with **upward EPS estimates** or recent positive earnings surprises. This was the key differentiator in the successful portfolio.
+2.  **Valuation Safety Net:** Re-impose strict **Low P/E and Low P/B** limits. This ensures we are buying assets with a margin of safety, protecting against the massive drawdowns seen in "High ROE" growth stocks.
+3.  **Technical Entry (Mean Reversion):** Instead of buying breakouts (which failed), target **Oversold conditions (RSI < 45-50)** within a longer-term uptrend. We want to buy dips in fundamentally improving companies.
+4.  **Risk Control:** Exclude stocks with **extreme recent volatility** (Standard Deviation > Market Average) to avoid "falling knives" regardless of their theoretical quality.
+
+**Weighting:** Maintain **Equal Weighting (20%)** to mitigate single-stock risk.
 
 ## 📈 2. Performance Tracking (과거 추천 성과)
 | 추천일        | 추천종목 (수익률)                                                                                    | 평균수익률   |
@@ -22,11 +30,11 @@ In a "Stable" market environment, the priority must shift from "bargain hunting"
 ## 🎯 3. Selection (Today's TOP 5)
 | 종목명    | 티커        |   비중 |    현재가 |   Total |
 |:-------|:----------|-----:|-------:|--------:|
-| ISC    | 095340.KQ |  0.2 | 174800 |      46 |
-| 알테오젠   | 196170.KQ |  0.2 | 543000 |      45 |
-| 이오테크닉스 | 039030.KQ |  0.2 | 416000 |      34 |
-| 원익IPS  | 240810.KQ |  0.2 | 115400 |      29 |
-| 에코프로비엠 | 247540.KQ |  0.2 | 543000 |      36 |
+| ISC    | 095340.KQ |   20 | 174800 |      46 |
+| 알테오젠   | 196170.KQ |   20 | 543000 |      45 |
+| 에스티팜   | 237690.KQ |   20 | 154600 |      45 |
+| 셀트리온제약 | 068760.KQ |   20 |  71150 |      40 |
+| 에임드바이오 | 0009K0.KQ |   20 |  52300 |      38 |
 
 ## 📊 4. Scoring Detail
 | 종목명      | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |

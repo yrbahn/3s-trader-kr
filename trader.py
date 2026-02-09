@@ -146,38 +146,58 @@ def calculate_performance(trajectory: List[Dict]) -> List[Dict]:
         selected = entry.get("selected", [])
         if isinstance(selected, list):
             for s in selected:
-                code = s.get("stock_code") if isinstance(s, dict) else str(s)
-                match = re.search(r'(\d{6}\.K[SQ])', str(code))
-                if match: all_tickers.add(match.group(1))
-                else: all_tickers.add(str(code))
+                raw_code = s.get("stock_code") if isinstance(s, dict) else str(s)
+                # 정규표현식으로 티커(숫자6자리.KQ 또는 KS)만 정확히 추출
+                match = re.search(r'(\d{6}\.K[SQ])', str(raw_code).upper())
+                if match:
+                    all_tickers.add(match.group(1))
     
     if not all_tickers: return trajectory
 
     current_prices = {}
     try:
-        data = yf.download(list(all_tickers), period="1d", progress=False)
-        for t in all_tickers:
+        # 티커 리스트를 공백으로 구분된 문자열로 전달
+        ticker_list = list(all_tickers)
+        data = yf.download(" ".join(ticker_list), period="1d", progress=False)
+        
+        for t in ticker_list:
             try:
-                price_val = data['Close'][t].iloc[-1]
-                current_prices[t] = float(price_val.iloc[0]) if hasattr(price_val, 'iloc') else float(price_val)
+                if len(ticker_list) > 1:
+                    price_col = data['Close'][t]
+                else:
+                    price_col = data['Close']
+                
+                if not price_col.empty:
+                    val = price_col.iloc[-1]
+                    current_prices[t] = float(val.iloc[0]) if hasattr(val, 'iloc') else float(val)
             except: continue
-    except: pass
+    except Exception as e:
+        print(f"주가 조회 중 오류: {e}")
 
     for entry in trajectory:
         total_ret = 0.0; total_weight = 0.0
         selected = entry.get("selected", [])
         if not isinstance(selected, list): continue
+        
         for s in selected:
             if not isinstance(s, dict): continue
             raw_code = s.get("stock_code")
-            match = re.search(r'(\d{6}\.K[SQ])', str(raw_code))
+            match = re.search(r'(\d{6}\.K[SQ])', str(raw_code).upper())
             code = match.group(1) if match else str(raw_code)
-            buy_price = s.get("buy_price"); weight = s.get("weight", 1)
+            
+            buy_price = s.get("buy_price")
+            weight = s.get("weight", 1)
             if code in current_prices and buy_price and buy_price > 0:
-                ret = ((current_prices[code] / buy_price) - 1) * 100
-                s["current_price"] = int(current_prices[code]); s["return"] = round(ret, 2)
-                total_ret += ret * weight; total_weight += weight
-        entry["perf"] = round(total_ret / total_weight, 2) if total_weight > 0 else 0.0
+                curr_p = current_prices[code]
+                ret = ((curr_p / buy_price) - 1) * 100
+                s["current_price"] = int(curr_p)
+                s["return"] = round(ret, 2)
+                total_ret += ret * weight
+                total_weight += weight
+        
+        if total_weight > 0:
+            entry["perf"] = round(total_ret / total_weight, 2)
+        
     return trajectory
 
 # --- Core Data Fetcher ---
