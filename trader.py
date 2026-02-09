@@ -382,7 +382,10 @@ def main():
                     raw_c = s.get('stock_code', 'N/A')
                     match = re.search(r'(\d{6}\.K[SQ])', str(raw_c))
                     clean_c = match.group(1) if match else str(raw_c)
-                    picks.append(f"{clean_c} ({s.get('return', 0)}%)")
+                    # 티커를 종목명으로 변환
+                    name = stock.get_market_ticker_name(clean_c.split('.')[0])
+                    if not name or name == clean_c: name = clean_c
+                    picks.append(f"{name} ({s.get('return', 0)}%)")
                 perf_list.append({"추천일": t_entry['date'], "추천종목 (수익률)": ", ".join(picks[:5]), "평균수익률": f"{t_entry.get('perf', 0)}%"})
             f.write(pd.DataFrame(perf_list).head(10).to_markdown(index=False) + "\n\n")
         else: f.write("*과거 기록이 없습니다.*\n\n")
