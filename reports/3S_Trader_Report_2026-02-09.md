@@ -1,7 +1,7 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Refine the "Quality Value Trend-Confirmation" strategy. Retain the "Value + Earnings Revisions" core (Positive Earnings Revisions, Positive Net Income, Low P/E, Low P/B). Replace the "Oversold RSI" entry signal with a "Trend Confirmation" filter (Price > 20-day Moving Average) and explicitly exclude stocks with >10% drawdown in the trailing 5 days. Maintain equal weighting (20% per stock). Objective: Capture alpha from undervalued companies with improving fundamentals while avoiding downside momentum.
+Refine the "Quality Value Trend-Confirmation" strategy. Maintain the "Value + Earnings Revisions" core (Positive Earnings Revisions, Positive Net Income, Low P/E, Low P/B). Employ "Trend Confirmation" filter (Price > 20-day Moving Average) and explicitly exclude stocks with >10% drawdown in the trailing 5 days. Maintain equal weighting (20% per stock). Objective: Capture alpha from undervalued companies with improving fundamentals while avoiding downside momentum.
 
 
 ## 📈 2. Performance Tracking

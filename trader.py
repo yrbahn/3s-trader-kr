@@ -52,24 +52,48 @@ class DartFinancialCollector:
         self.dart = OpenDartReader(api_key)
     
     def get_summary(self, corp_name):
+        """최근 분기 실적 및 부채비율, 유보율 등 심화 지표를 수집합니다."""
         try:
-            # 1. Get recent annual financial statement (last complete year)
             current_year = datetime.now().year
-            last_year = current_year - 1
-            df = self.dart.finstate(corp_name, last_year)
-            if df is None or df.empty: return "DART Data unavailable."
+            reports = [(current_year, '11014'), (current_year, '11012'), (current_year, '11013'), (current_year - 1, '11011')]
             
-            # Extract key items (Revenue, OP, Net Income)
-            # account_nm: 매출액, 영업이익, 당기순이익
-            metrics = {}
-            for acc in ['매출액', '영업이익', '당기순이익']:
-                row = df[df['account_nm'].str.contains(acc, na=False)]
-                if not row.empty:
-                    val = row.iloc[0]['thstrm_amount']
-                    metrics[acc] = f"{int(val.replace(',','')):,}" if val and val != '-' else "N/A"
+            # 1. 분기별 실적 추세 (손익계산서)
+            summary_list = []
+            debt_ratio = "N/A"
+            reserve_ratio = "N/A"
             
-            return f"DART Summary ({last_year}): {metrics}"
-        except: return "DART lookup failed."
+            for year, code in reports:
+                try:
+                    # 손익계산서 데이터
+                    df_fin = self.dart.finstate(corp_name, year, reprt_code=code)
+                    if df_fin is not None and not df_fin.empty:
+                        metrics = {"Period": f"{year}.{code}"}
+                        for acc in ['매출액', '영업이익', '당기순이익']:
+                            row = df_fin[df_fin['account_nm'].str.contains(acc, na=False)]
+                            if not row.empty:
+                                val = str(row.iloc[0]['thstrm_amount']).replace(',','')
+                                metrics[acc] = f"{int(val):,}" if val and val != '-' else "N/A"
+                        summary_list.append(metrics)
+                    
+                    # 2. 재무 건전성 지표 (재무상태표 - 가장 최신 리포트에서 1회만 추출)
+                    if debt_ratio == "N/A":
+                        df_all = self.dart.finstate_all(corp_name, year, reprt_code=code)
+                        if df_all is not None and not df_all.empty:
+                            # 부채총계, 자본총계 추출
+                            debt = df_all[df_all['account_nm'].str.contains('부채총계', na=False)]
+                            equity = df_all[df_all['account_nm'].str.contains('자본총계', na=False)]
+                            if not debt.empty and not equity.empty:
+                                d_val = float(str(debt.iloc[0]['thstrm_amount']).replace(',',''))
+                                e_val = float(str(equity.iloc[0]['thstrm_amount']).replace(',',''))
+                                debt_ratio = f"{round((d_val / e_val) * 100, 2)}%"
+                except: continue
+                if len(summary_list) >= 4: break
+
+            return {
+                "quarterly_trend": summary_list,
+                "health_metrics": {"debt_ratio": debt_ratio}
+            }
+        except: return {"error": "DART lookup failed"}
 
 # --- Helper Functions ---
 
@@ -214,15 +238,25 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         ma60 = safe_get(df['Close'].rolling(window=60).mean())
         tech_summary = f"Price: {int(last_close)}, Weekly: {weekly_return}%, Vol: {volatility}%, MA: {'Bullish' if ma5>ma20>ma60 else 'Neutral'}, Gaps: MA5:{round(((last_close/ma5)-1)*100,2)}%, MA20:{round(((last_close/ma20)-1)*100,2)}%"
         
-        # Fundamental (Naver + DART)
-        soup_main = BeautifulSoup(requests.get(f"https://finance.naver.com/item/main.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
+        # Fundamental (Naver + DART + Consensus)
+        url_main = f"https://finance.naver.com/item/main.naver?code={code}"
+        res_main = requests.get(url_main, headers={"User-Agent":"Mozilla/5.0"})
+        soup_main = BeautifulSoup(res_main.text, "html.parser")
+        
         def _parse(s, i):
             try: return float(s.find("em", id=i).text.replace(",","").replace("배","").replace("%",""))
             except: return 0.0
         fund_data = {"per": _parse(soup_main, "_per"), "pbr": _parse(soup_main, "_pbr"), "div_yield": _parse(soup_main, "_dvr")}
         
+        # 증권사 컨센서스 (목표주가) 추출
+        target_price = "N/A"
+        try:
+            tp_tag = soup_main.select_one("table.item_info tr td em")
+            if tp_tag: target_price = tp_tag.text.replace(",", "")
+        except: pass
+        
         # DART Detail
-        dart_text = dart_collector.get_summary(name)
+        dart_info = dart_collector.get_summary(name)
         
         # Investor
         soup_frgn = BeautifulSoup(requests.get(f"https://finance.naver.com/item/frgn.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
@@ -239,7 +273,7 @@ def _get_stock_data(ticker: str) -> Dict[str, Any]:
         
         return {
             "tech_text": tech_summary, 
-            "fund_text": f"Basic: {fund_data}, Detailed: {dart_text}, Investor: F:{f_sum}, I:{i_sum}", 
+            "fund_text": f"Basic: {fund_data}, TargetPrice: {target_price}, Detailed: {dart_info}, Investor: F:{f_sum}, I:{i_sum}", 
             "news_text": "\n".join(news_contexts), 
             "price": int(last_close)
         }
