@@ -44,35 +44,45 @@
     },
     {
       "date": "2026-02-09",
-      "strategy": "Refine the \"Quality Value Trend-Confirmation\" strategy. Maintain the \"Value + Earnings Revisions\" core (Positive Earnings Revisions, Positive Net Income, Low P/E, Low P/B). Employ \"Trend Confirmation\" filter (Price > 20-day Moving Average) and explicitly exclude stocks with >10% drawdown in the trailing 5 days. Maintain equal weighting (20% per stock). Objective: Capture alpha from undervalued companies with improving fundamentals while avoiding downside momentum.\n",
+      "strategy": "**Strategy Name:** Deep Value Mean-Reversion with Earnings Momentum\n\n**Rationale:**\nAnalysis of recent performance indicates that the \"Catalyst-Driven Value\" approach (Feb 8, +5.64%) significantly outperformed the \"Trend-Confirmation\" modification (Feb 9, 0.0%). In a stable market environment, buying undervalued assets with fundamental tailwinds during technical pullbacks proves superior to chasing established trends. Therefore, we will remove the moving average breakout requirement and re-emphasize mean reversion on fundamentally strong assets.\n\n**Selection Criteria:**\n1.  **Valuation:** Focus on Low P/E and Low P/B ratios (relative to sector) to ensure a margin of safety.\n2.  **Fundamental Catalyst:** Require **Positive Earnings Revisions** (1-month or 3-month) to identify companies with improving outlooks.\n3.  **Quality Floor:** Strict requirement for **Positive Net Income** to avoid distressed assets.\n4.  **Technical Entry:** Target **RSI (14) < 50**. This shifts focus from \"trend following\" back to \"buying value on dips/neutrality,\" aligning with the successful Feb 8 logic.\n5.  **Risk Management:** Maintain equal weighting (20% per stock) to mitigate idiosyncratic risk.",
       "selected": [
         {
-          "stock_code": "ISC (095340.KQ)",
-          "weight": 20,
-          "buy_price": 0
+          "stock_code": "058610.KQ",
+          "weight": 0.2,
+          "buy_price": 138100,
+          "current_price": 138000,
+          "return": -0.07
         },
         {
-          "stock_code": "알테오젠 (196170.KQ)",
-          "weight": 20,
-          "buy_price": 0
+          "stock_code": "237690.KQ",
+          "weight": 0.2,
+          "buy_price": 154600,
+          "current_price": 154800,
+          "return": 0.13
         },
         {
-          "stock_code": "에스티팜 (237690.KQ)",
-          "weight": 20,
-          "buy_price": 0
+          "stock_code": "263750.KQ",
+          "weight": 0.2,
+          "buy_price": 53800,
+          "current_price": 53700,
+          "return": -0.19
         },
         {
-          "stock_code": "셀트리온제약 (068760.KQ)",
-          "weight": 20,
-          "buy_price": 0
+          "stock_code": "357780.KQ",
+          "weight": 0.2,
+          "buy_price": 30350,
+          "current_price": 429000,
+          "return": 1313.51
         },
         {
-          "stock_code": "에임드바이오 (0009K0.KQ)",
-          "weight": 20,
-          "buy_price": 0
+          "stock_code": "068760.KQ",
+          "weight": 0.2,
+          "buy_price": 71150,
+          "current_price": 70800,
+          "return": -0.49
         }
       ],
-      "perf": 0.0
+      "perf": 262.58
     }
   ]
 }

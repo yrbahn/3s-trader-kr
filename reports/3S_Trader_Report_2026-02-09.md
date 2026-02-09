@@ -1,10 +1,19 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Refine the "Quality Value Trend-Confirmation" strategy. Maintain the "Value + Earnings Revisions" core (Positive Earnings Revisions, Positive Net Income, Low P/E, Low P/B). Employ "Trend Confirmation" filter (Price > 20-day Moving Average) and explicitly exclude stocks with >10% drawdown in the trailing 5 days. Maintain equal weighting (20% per stock). Objective: Capture alpha from undervalued companies with improving fundamentals while avoiding downside momentum.
+**Strategy Name:** Deep Value Mean-Reversion with Earnings Momentum
 
+**Rationale:**
+Analysis of recent performance indicates that the "Catalyst-Driven Value" approach (Feb 8, +5.64%) significantly outperformed the "Trend-Confirmation" modification (Feb 9, 0.0%). In a stable market environment, buying undervalued assets with fundamental tailwinds during technical pullbacks proves superior to chasing established trends. Therefore, we will remove the moving average breakout requirement and re-emphasize mean reversion on fundamentally strong assets.
 
-## 📈 2. Performance Tracking
+**Selection Criteria:**
+1.  **Valuation:** Focus on Low P/E and Low P/B ratios (relative to sector) to ensure a margin of safety.
+2.  **Fundamental Catalyst:** Require **Positive Earnings Revisions** (1-month or 3-month) to identify companies with improving outlooks.
+3.  **Quality Floor:** Strict requirement for **Positive Net Income** to avoid distressed assets.
+4.  **Technical Entry:** Target **RSI (14) < 50**. This shifts focus from "trend following" back to "buying value on dips/neutrality," aligning with the successful Feb 8 logic.
+5.  **Risk Management:** Maintain equal weighting (20% per stock) to mitigate idiosyncratic risk.
+
+## 📈 2. Performance Tracking (과거 추천 성과)
 | 추천일        | 추천종목 (수익률)                                                           | 평균수익률   |
 |:-----------|:---------------------------------------------------------------------|:--------|
 | 2026-02-08 | 기가비스 (11.28%), 디어유 (4.14%), 감성코퍼레이션 (2.3%), ISC (7.52%), 네오셈 (2.96%) | 5.64%   |
@@ -12,11 +21,11 @@ Refine the "Quality Value Trend-Confirmation" strategy. Maintain the "Value + Ea
 ## 🎯 3. Selection
 | 종목명    | 티커        |   비중 |    현재가 |   Total |
 |:-------|:----------|-----:|-------:|--------:|
-| ISC    | 095340.KQ |   20 | 174800 |      46 |
-| 알테오젠   | 196170.KQ |   20 | 543000 |      45 |
-| 에스티팜   | 237690.KQ |   20 | 154600 |      45 |
-| 셀트리온제약 | 068760.KQ |   20 |  71150 |      40 |
-| 에임드바이오 | 0009K0.KQ |   20 |  52300 |      38 |
+| 에스피지   | 058610.KQ |  0.2 | 138100 |      37 |
+| 에스티팜   | 237690.KQ |  0.2 | 154600 |      45 |
+| 펄어비스   | 263750.KQ |  0.2 |  53800 |      37 |
+| 솔브레인   | 357780.KQ |  0.2 |  30350 |      31 |
+| 셀트리온제약 | 068760.KQ |  0.2 |  71150 |      40 |
 
 ## 📊 4. Scoring Detail
 | 종목명      | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |
