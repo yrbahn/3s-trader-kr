@@ -1,27 +1,32 @@
 # 3S-Trader KR 전략 리포트 (2026-02-09)
 
 ## 🧠 1. Strategy
-Based on the severe underperformance (-18.26%) of the previous "Quality-Adjusted Earnings Momentum" strategy—specifically driven by catastrophic drawdowns in individual holdings (e.g., -62% and -29%)—it is evident that fundamental quality metrics alone failed to filter out assets in severe technical decline.
+Based on the severe underperformance (-14.54%) of the previous "Low-Volatility Trend-Value" strategy—which failed to prevent catastrophic idiosyncratic losses (e.g., -61.97% and -28.91%)—it is clear that **valuation metrics (Low P/E, P/B) are currently acting as "value traps,"** selecting distressed assets rather than undervalued opportunities.
 
-In a "Stable" market, the strategy must pivot to prioritize **capital preservation and trend alignment** to avoid "falling knives."
+In a "Stable" market environment, the priority must shift from "bargain hunting" to **quality assurance** to eliminate tail risk.
 
 **Refined Strategy Recommendation:**
 
-"Adopt a **'Low-Volatility Trend-Value'** strategy. While retaining the core fundamental drivers of **Positive Earnings Revisions** and **Attractive Valuation** (Low P/E, P/B), immediately introduce a **Technical Trend Filter** (Price > 20-day or 60-day Moving Average) to disqualify stocks currently in a downtrend. Furthermore, apply a **Low Volatility** constraint (excluding stocks with extreme Beta or recent high variance) to align with the 'Stable' market signal and mitigate the idiosyncratic tail risk that caused recent heavy losses."
+**"Quality-First Momentum with Strict Drawdown Control"**
+
+1.  **Pivot from Value to Quality:** Replace Low P/B and P/E factors with **High ROE (Return on Equity)** and **Positive Operating Margins**. This ensures the portfolio holds companies with robust business models, significantly reducing the risk of sudden fundamental collapses (the -60% scenarios).
+2.  **Strengthened Trend Filter:** Maintain the **Price > 60-day Moving Average** rule but add a **Relative Strength** requirement (Stock performance > Market Index over 1 month) to ensure we are buying leaders, not laggards.
+3.  **Volatility Cap:** Exclude stocks with a **Beta > 1.5** or extreme recent daily variance to align with the "Stable" market signal.
+4.  **Risk Management:** Implement an **Equal Weighting** scheme (max 20% per position) to prevent single-stock disasters from dragging down the entire portfolio, as seen with the previous uneven weighting.
 
 ## 📈 2. Performance Tracking (과거 추천 성과)
-| 추천일        | 추천종목 (수익률)                                                                     | 평균수익률   |
-|:-----------|:-------------------------------------------------------------------------------|:--------|
-| 2026-02-08 | 420770.KQ (0%), 376300.KQ (0%), 036620.KQ (0%), 095340.KQ (0%), 253590.KQ (0%) | 0.0%    |
+| 추천일        | 추천종목 (수익률)                                                                                    | 평균수익률   |
+|:-----------|:----------------------------------------------------------------------------------------------|:--------|
+| 2026-02-08 | 420770.KQ (11.28%), 376300.KQ (4.14%), 036620.KQ (2.3%), 095340.KQ (7.52%), 253590.KQ (2.96%) | 5.64%   |
 
 ## 🎯 3. Selection (Today's TOP 5)
 | 종목명    | 티커        |   비중 |    현재가 |   Total |
 |:-------|:----------|-----:|-------:|--------:|
-| ISC    | 095340.KQ | 0.25 | 174800 |      46 |
-| 알테오젠   | 196170.KQ | 0.2  | 543000 |      45 |
-| 이오테크닉스 | 039030.KQ | 0.2  | 416000 |      34 |
-| 원익IPS  | 240810.KQ | 0.2  | 115400 |      29 |
-| 에코프로비엠 | 247540.KQ | 0.15 | 543000 |      36 |
+| ISC    | 095340.KQ |  0.2 | 174800 |      46 |
+| 알테오젠   | 196170.KQ |  0.2 | 543000 |      45 |
+| 이오테크닉스 | 039030.KQ |  0.2 | 416000 |      34 |
+| 원익IPS  | 240810.KQ |  0.2 | 115400 |      29 |
+| 에코프로비엠 | 247540.KQ |  0.2 | 543000 |      36 |
 
 ## 📊 4. Scoring Detail
 | 종목명      | 티커        |   financial_health |   growth_potential |   news_sentiment |   news_impact |   price_momentum |   volatility_risk |

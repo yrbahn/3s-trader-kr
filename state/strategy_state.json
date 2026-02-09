@@ -5,40 +5,50 @@
       "strategy": "Refine Catalyst-Driven Value strategy by emphasizing positive earnings revisions alongside low P/B, P/E, and oversold RSI. Maintain diversification (max 20% per stock) and require positive net income. Focus on fundamentally improving undervalued assets exhibiting upward earnings momentum.\n",
       "selected": [
         {
-          "stock_code": "기가비스 (420770.KQ)",
+          "stock_code": "420770.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 58500,
+          "current_price": 65100,
+          "return": 11.28
         },
         {
-          "stock_code": "디어유 (376300.KQ)",
+          "stock_code": "376300.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 41050,
+          "current_price": 42750,
+          "return": 4.14
         },
         {
-          "stock_code": "감성코퍼레이션 (036620.KQ)",
+          "stock_code": "036620.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 6510,
+          "current_price": 6660,
+          "return": 2.3
         },
         {
-          "stock_code": "ISC (095340.KQ)",
+          "stock_code": "095340.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 163500,
+          "current_price": 175800,
+          "return": 7.52
         },
         {
-          "stock_code": "네오셈 (253590.KQ)",
+          "stock_code": "253590.KQ",
           "weight": 20,
-          "buy_price": 0
+          "buy_price": 16890,
+          "current_price": 17390,
+          "return": 2.96
         }
       ],
-      "perf": 0.0
+      "perf": 5.64
     },
     {
       "date": "2026-02-09",
-      "strategy": "Based on the severe underperformance (-18.26%) of the previous \"Quality-Adjusted Earnings Momentum\" strategy—specifically driven by catastrophic drawdowns in individual holdings (e.g., -62% and -29%)—it is evident that fundamental quality metrics alone failed to filter out assets in severe technical decline.\n\nIn a \"Stable\" market, the strategy must pivot to prioritize **capital preservation and trend alignment** to avoid \"falling knives.\"\n\n**Refined Strategy Recommendation:**\n\n\"Adopt a **'Low-Volatility Trend-Value'** strategy. While retaining the core fundamental drivers of **Positive Earnings Revisions** and **Attractive Valuation** (Low P/E, P/B), immediately introduce a **Technical Trend Filter** (Price > 20-day or 60-day Moving Average) to disqualify stocks currently in a downtrend. Furthermore, apply a **Low Volatility** constraint (excluding stocks with extreme Beta or recent high variance) to align with the 'Stable' market signal and mitigate the idiosyncratic tail risk that caused recent heavy losses.\"",
+      "strategy": "Based on the severe underperformance (-14.54%) of the previous \"Low-Volatility Trend-Value\" strategy—which failed to prevent catastrophic idiosyncratic losses (e.g., -61.97% and -28.91%)—it is clear that **valuation metrics (Low P/E, P/B) are currently acting as \"value traps,\"** selecting distressed assets rather than undervalued opportunities.\n\nIn a \"Stable\" market environment, the priority must shift from \"bargain hunting\" to **quality assurance** to eliminate tail risk.\n\n**Refined Strategy Recommendation:**\n\n**\"Quality-First Momentum with Strict Drawdown Control\"**\n\n1.  **Pivot from Value to Quality:** Replace Low P/B and P/E factors with **High ROE (Return on Equity)** and **Positive Operating Margins**. This ensures the portfolio holds companies with robust business models, significantly reducing the risk of sudden fundamental collapses (the -60% scenarios).\n2.  **Strengthened Trend Filter:** Maintain the **Price > 60-day Moving Average** rule but add a **Relative Strength** requirement (Stock performance > Market Index over 1 month) to ensure we are buying leaders, not laggards.\n3.  **Volatility Cap:** Exclude stocks with a **Beta > 1.5** or extreme recent daily variance to align with the \"Stable\" market signal.\n4.  **Risk Management:** Implement an **Equal Weighting** scheme (max 20% per position) to prevent single-stock disasters from dragging down the entire portfolio, as seen with the previous uneven weighting.",
       "selected": [
         {
           "stock_code": "095340.KQ",
-          "weight": 0.25,
+          "weight": 0.2,
           "buy_price": 174800,
           "current_price": 175800,
           "return": 0.57
@@ -66,13 +76,13 @@
         },
         {
           "stock_code": "247540.KQ",
-          "weight": 0.15,
+          "weight": 0.2,
           "buy_price": 543000,
           "current_price": 206500,
           "return": -61.97
         }
       ],
-      "perf": -14.54
+      "perf": -17.67
     }
   ]
 }
