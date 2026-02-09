@@ -31,6 +31,48 @@
         }
       ],
       "perf": 0.0
+    },
+    {
+      "date": "2026-02-09",
+      "strategy": "Based on the neutral performance (0.0%) of the previous allocation and the current \"Stable\" market signal, the strategy should shift from a pure \"Oversold/Value\" approach to a \"Quality/Momentum\" blend. In a stable market, low-quality undervalued stocks often stagnate (value traps), whereas companies with proven profitability and upward revisions tend to outperform.\n\n**Refined Strategy Recommendation:**\n\n\"Adopt a **'Quality-Adjusted Earnings Momentum'** strategy. Retain the core filter for **positive earnings revisions** and **attractive valuation** (Low P/E, P/B), but replace the 'oversold RSI' metric with a **profitability threshold (High ROE or Operating Margin)** to ensure asset quality in a stable environment. Reduce sector concentration (previously heavy in semiconductors) by selecting leaders across diverse industries that are demonstrating price stability or early trend reversal. Maintain a maximum weight of 20% per stock to manage idiosyncratic risk.\"",
+      "selected": [
+        {
+          "stock_code": "095340.KQ",
+          "weight": 0.2,
+          "buy_price": 174800,
+          "current_price": 175000,
+          "return": 0.11
+        },
+        {
+          "stock_code": "196170.KQ",
+          "weight": 0.2,
+          "buy_price": 543000,
+          "current_price": 385500,
+          "return": -29.01
+        },
+        {
+          "stock_code": "237690.KQ",
+          "weight": 0.2,
+          "buy_price": 154600,
+          "current_price": 154700,
+          "return": 0.06
+        },
+        {
+          "stock_code": "039030.KQ",
+          "weight": 0.2,
+          "buy_price": 416000,
+          "current_price": 415000,
+          "return": -0.24
+        },
+        {
+          "stock_code": "247540.KQ",
+          "weight": 0.2,
+          "buy_price": 543000,
+          "current_price": 205000,
+          "return": -62.25
+        }
+      ],
+      "perf": -18.26
     }
   ]
 }
