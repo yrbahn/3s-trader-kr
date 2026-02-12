@@ -8,39 +8,39 @@
           "stock_code": "420770.KQ",
           "weight": 20,
           "buy_price": 58500,
-          "current_price": 65100,
-          "return": 11.28
+          "current_price": 58400,
+          "return": -0.17
         },
         {
           "stock_code": "376300.KQ",
           "weight": 20,
           "buy_price": 41050,
-          "current_price": 42750,
-          "return": 4.14
+          "current_price": 42900,
+          "return": 4.51
         },
         {
           "stock_code": "036620.KQ",
           "weight": 20,
           "buy_price": 6510,
-          "current_price": 6660,
-          "return": 2.3
+          "current_price": 7120,
+          "return": 9.37
         },
         {
           "stock_code": "095340.KQ",
           "weight": 20,
           "buy_price": 163500,
-          "current_price": 175800,
-          "return": 7.52
+          "current_price": 175600,
+          "return": 7.4
         },
         {
           "stock_code": "253590.KQ",
           "weight": 20,
           "buy_price": 16890,
-          "current_price": 17390,
-          "return": 2.96
+          "current_price": 16200,
+          "return": -4.09
         }
       ],
-      "perf": 5.64
+      "perf": 3.4
     },
     {
       "date": "2026-02-09",
@@ -50,39 +50,45 @@
           "stock_code": "058610.KQ",
           "weight": 0.2,
           "buy_price": 138100,
-          "current_price": 138000,
-          "return": -0.07
+          "current_price": 137300,
+          "return": -0.58
         },
         {
           "stock_code": "237690.KQ",
           "weight": 0.2,
           "buy_price": 154600,
-          "current_price": 154800,
-          "return": 0.13
+          "current_price": 147700,
+          "return": -4.46
         },
         {
           "stock_code": "263750.KQ",
           "weight": 0.2,
           "buy_price": 53800,
-          "current_price": 53700,
-          "return": -0.19
+          "current_price": 53500,
+          "return": -0.56
         },
         {
           "stock_code": "357780.KQ",
           "weight": 0.2,
           "buy_price": 30350,
-          "current_price": 429000,
-          "return": 1313.51
+          "current_price": 397500,
+          "return": 1209.72
         },
         {
           "stock_code": "068760.KQ",
           "weight": 0.2,
           "buy_price": 71150,
-          "current_price": 70800,
-          "return": -0.49
+          "current_price": 72700,
+          "return": 2.18
         }
       ],
-      "perf": 262.58
+      "perf": 241.26
+    },
+    {
+      "date": "2026-02-12",
+      "strategy": "{}",
+      "selected": [],
+      "perf": 0.0
     }
   ]
 }
