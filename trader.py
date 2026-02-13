@@ -14,6 +14,7 @@ import FinanceDataReader as fdr
 from pykrx import stock
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import OpenDartReader
+import psycopg2
 
 # --- Configuration ---
 STATE_DIR = "state"
@@ -30,6 +31,78 @@ GEMINI_LITE_MODEL = "gemini-2.5-flash-lite"
 GEMINI_PRO_MODEL = "gemini-3-pro-preview"
 
 DART_API_KEY = "6dd44b6c2f494848116618fbc0ea3947196f3ef0"
+
+# PostgreSQL 연결 설정 (marketsense DB)
+POSTGRES_HOST = os.getenv("DB_HOST", "192.168.0.248")
+POSTGRES_PORT = int(os.getenv("DB_PORT", 5432))
+POSTGRES_DB = os.getenv("DB_NAME", "marketsense")
+POSTGRES_USER = os.getenv("DB_USER", "yrbahn")
+POSTGRES_PASSWORD = os.getenv("DB_PASSWORD", "1234")
+
+def get_postgres_connection():
+    """PostgreSQL 연결"""
+    return psycopg2.connect(
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        database=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
+    )
+
+def get_fundamental_from_db(ticker: str) -> Dict:
+    """PostgreSQL에서 재무 데이터 조회"""
+    try:
+        conn = get_postgres_connection()
+        cur = conn.cursor()
+        
+        # 종목 코드에서 .KS, .KQ 제거
+        code = ticker.split(".")[0]
+        
+        # 최근 4분기 재무 데이터 조회
+        query = """
+            SELECT 
+                f.revenue, f.net_income, f.operating_income, 
+                f.total_assets, f.total_equity, f.eps,
+                f.fiscal_quarter, f.period_end
+            FROM financial_statements f
+            JOIN stocks s ON f.stock_id = s.id
+            WHERE s.ticker = %s
+            ORDER BY f.period_end DESC
+            LIMIT 4
+        """
+        cur.execute(query, (code,))
+        rows = cur.fetchall()
+        conn.close()
+        
+        if not rows:
+            return {}
+        
+        # 최근 4분기 합산 및 평균
+        total_revenue = sum(r[0] or 0 for r in rows)
+        total_net_income = sum(r[1] or 0 for r in rows)
+        total_op_income = sum(r[2] or 0 for r in rows)
+        avg_assets = sum(r[3] or 0 for r in rows) / len(rows) if rows else 0
+        avg_equity = sum(r[4] or 0 for r in rows) / len(rows) if rows else 0
+        latest_eps = rows[0][5] if rows[0][5] else None
+        
+        # ROE, ROA 계산
+        roe = (total_net_income / avg_equity * 100) if avg_equity > 0 else None
+        roa = (total_net_income / avg_assets * 100) if avg_assets > 0 else None
+        
+        return {
+            "revenue_4q": round(total_revenue / 1e8, 2),  # 억원 단위
+            "net_income_4q": round(total_net_income / 1e8, 2),
+            "operating_income_4q": round(total_op_income / 1e8, 2),
+            "total_assets": round(avg_assets / 1e8, 2),
+            "total_equity": round(avg_equity / 1e8, 2),
+            "eps": latest_eps,
+            "roe_calculated": round(roe, 2) if roe else None,
+            "roa_calculated": round(roa, 2) if roa else None,
+            "quarters_available": len(rows)
+        }
+    except Exception as e:
+        print(f"[DB Error] {ticker}: {e}")
+        return {}
 
 if LLM_PROVIDER == "gemini":
     LITE_MODEL = GEMINI_LITE_MODEL
@@ -180,6 +253,11 @@ def collect_stock_data(ticker: str) -> Dict[str, Any]:
         
         fundamental = {"per": _p(soup_main, "_per"), "pbr": _p(soup_main, "_pbr"), "roe": _p(soup_main, "_roe"), "target_price": soup_main.select_one("table.item_info tr td em").text.replace(",", "") if soup_main.select_one("table.item_info tr td em") else "N/A"}
         
+        # PostgreSQL에서 추가 재무 데이터 병합
+        db_fundamental = get_fundamental_from_db(ticker)
+        if db_fundamental:
+            fundamental.update(db_fundamental)
+        
         dart = dart_collector.get_summary(name)
         soup_frgn = BeautifulSoup(requests.get(f"https://finance.naver.com/item/frgn.naver?code={code}", headers={"User-Agent":"Mozilla/5.0"}).text, "html.parser")
         f_sum, i_sum = 0, 0
@@ -206,7 +284,34 @@ def technical_agent(raw: Dict) -> str:
     return _llm_chat([{"role": "user", "content": p}], model=LITE_MODEL)
 
 def fundamental_agent(raw: Dict) -> str:
-    p = f"You are a stock fundamentals analysis agent. Task: Analyze financial performance for {raw['name']}.\nData: {raw['fundamental']}, DART: {raw['dart']}, Investor: {raw['investor']}\nProvide summary."
+    fund_data = raw.get('fundamental', {})
+    
+    # 재무 데이터 포맷팅
+    fund_summary = f"""
+PER: {fund_data.get('per', 'N/A')}, PBR: {fund_data.get('pbr', 'N/A')}, ROE: {fund_data.get('roe', 'N/A')}%
+4분기 매출: {fund_data.get('revenue_4q', 'N/A')}억원
+4분기 순이익: {fund_data.get('net_income_4q', 'N/A')}억원
+4분기 영업이익: {fund_data.get('operating_income_4q', 'N/A')}억원
+총자산: {fund_data.get('total_assets', 'N/A')}억원
+총자본: {fund_data.get('total_equity', 'N/A')}억원
+EPS: {fund_data.get('eps', 'N/A')}
+계산 ROE: {fund_data.get('roe_calculated', 'N/A')}%, ROA: {fund_data.get('roa_calculated', 'N/A')}%
+"""
+    
+    p = f"""You are a stock fundamentals analysis agent. Task: Analyze financial performance for {raw['name']}.
+
+Financial Data:
+{fund_summary}
+
+DART Info: {raw.get('dart', {})}
+Investor Flow: {raw.get('investor', {})}
+
+Provide a concise summary focusing on:
+1. Profitability (ROE, ROA, margins)
+2. Growth trend (revenue, income)
+3. Valuation (PER, PBR)
+4. Financial stability (assets, equity)
+"""
     return _llm_chat([{"role": "user", "content": p}], model=LITE_MODEL)
 
 def score_agent(raw: Dict, n_summ: str, f_summ: str, t_anal: str) -> Dict[str, Any]:
